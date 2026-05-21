@@ -1,0 +1,516 @@
+Salary Prediction System - Project Documentation
+
+1. Project Overview
+-------------------
+This repository is a full-stack salary prediction system built with:
+- Backend: FastAPI, Python, pandas, scikit-learn, HTTPX
+- Frontend: React, Vite, React Router, Recharts, Axios, Tailwind CSS
+- Deployment: Docker Compose for backend and frontend services
+
+The application provides:
+- Individual salary prediction based on country, education level, and years of experience
+- Batch CSV upload for bulk salary prediction
+- Analytics dashboard with interactive charts and filters
+- Currency conversion support based on USD exchange rates
+
+The system is designed to use developer survey data and a trained regression model.
+
+2. Root Folder Structure
+------------------------
+- docker-compose.yml         : Docker Compose service definitions for backend and frontend
+- README.md                  : Setup instructions and project description
+- backend/                   : Python backend service
+- frontend/                  : React frontend application
+
+3. Backend Architecture
+-----------------------
+Backend root: `backend/`
+
+Key files:
+- Dockerfile
+- requirements.txt
+- .env (present but not documented here)
+- app/main.py
+- app/routes/*.py
+- app/schemas/*.py
+- app/services/currency_service.py
+- app/ml/*.py
+- app/models/                  : trained model artifacts and notebook
+- dataset/survey_results_public.csv
+
+Backend responsibilities:
+- Host prediction and analytics APIs
+- Load and use a serialized ML model
+- Clean and validate input data for predictions
+- Process CSV uploads and produce batch predictions
+- Provide analytics derived from the dataset
+- Convert USD salaries to target currencies
+- Serve health check information
+
+3.1 Backend Entry Point
+-----------------------
+`backend/app/main.py`
+- Creates a FastAPI application named `Salary Prediction API`
+- Configures CORS to allow frontend origins `http://localhost:5173`, `http://localhost:3000`, and a placeholder domain
+- Includes routers from `predict`, `upload`, `analytics`, and `health`
+- Exposes a root endpoint `/` returning a welcome message
+
+3.2 Prediction API
+--------------------
+`backend/app/routes/predict.py`
+- Defines API router prefix `/api`
+- Exposes two endpoints:
+  - `POST /api/predict`
+  - `POST /api/convert-salary`
+  - `GET /api/currencies`
+
+`POST /api/predict`
+- Accepts `PredictionRequest` payload with `country`, `education`, and `experience`
+- Validates input using Pydantic
+- Calls `predict_salary()` from `app.ml.predict_salary`
+- Converts the raw USD prediction to the target currency based on the request country
+- Returns `PredictionResponse` containing:
+  - `predicted_salary` (converted salary in target currency)
+  - `predicted_salary_usd` (raw USD prediction)
+  - `currency` (target currency code)
+
+`POST /api/convert-salary`
+- Accepts query parameters `original_salary_usd` and `target_currency`
+- Uses `currency_service.convert_currency()` to convert the USD amount
+- Returns `ConvertedSalaryResponse`
+
+`GET /api/currencies`
+- Returns a map of supported currency codes to display names
+- Built from hardcoded fallback rates and currency maps
+
+3.3 CSV Upload API
+------------------
+`backend/app/routes/upload.py`
+- Endpoint: `POST /api/upload-csv`
+- Accepts file upload using `UploadFile` and `python-multipart`
+- Validates file extension `.csv`
+- Reads CSV content in UTF-8 or Latin-1 fallback encoding
+- Enforces exact column set `['Country','EdLevel','YearsCodePro']`
+- Applies cleaning functions:
+  - `clean_experience` to normalize experience strings and numbers
+  - `clean_education` to map education text into two categories
+- Iterates row by row and uses `safe_predict_salary()` for each record
+- Produces response containing:
+  - `results` list with original row values and `Predicted_Salary_USD`
+  - `errors` list for rows that could not be predicted
+  - row counts and success/failure totals
+
+Batch upload business logic:
+- For rows with missing or invalid values, prediction fails gracefully with a human-readable error message
+- Valid row predictions are rounded to 2 decimal places
+- The output is sanitized so NumPy scalar values become native Python scalars
+
+3.4 Analytics API
+------------------
+`backend/app/routes/analytics.py`
+- Endpoint: `GET /api/analytics`
+- Endpoint: `POST /api/analytics/filter`
+
+Analytics data pipeline:
+- Loads dataset from `backend/dataset/survey_results_public.csv`
+- Keeps relevant columns: `Country`, `EdLevel`, `YearsCodePro`, `Employment`, `ConvertedComp`
+- Renames `ConvertedComp` to `Salary`
+- Filters rows to `Employed full-time`
+- Groups low-frequency countries into `Other`, then removes `Other`
+- Applies the same cleaning logic from the prediction pipeline:
+  - `YearsCodePro` via `clean_experience`
+  - `EdLevel` via `clean_education`
+- Removes invalid or missing education values
+- Filters salary to `[10000, 250000]` and experience to `[0, 50]`
+- Caches cleaned DataFrame in `_df_cache`
+
+Analytics payload includes:
+- `summary_stats`: average, highest, lowest salary, total records
+- `mean_salary_by_country`
+- `mean_salary_by_experience`
+- `experience_salary_points` for line/area charts
+- `salary_distribution` histogram bins
+- `education_salary_comparison` aggregated salary stats by education
+- `education_salary_distribution`
+- `country_distribution`
+- `education_salary_by_country`
+
+Filter endpoint behavior:
+- Accepts JSON payload `{ countries: List[str] }`
+- Applies country filter to the cleaned dataset
+- Returns analytics on the filtered subset
+- If no records remain after filtering, returns empty analytics payload with zeroed summary stats
+
+Important note: The frontend currently passes additional filter parameters (`experienceRange`, `selectedEducationLevels`) to the analytics API, but the backend route only accepts country filtering. This is a mismatch between frontend and backend filtering responsibility.
+
+3.5 Health API
+---------------
+`backend/app/routes/health.py`
+- Exposes `GET /api/health`
+- Returns basic JSON status for service health checks
+
+3.6 Data Schemas
+-----------------
+`backend/app/schemas/salary_schema.py`
+- `PredictionRequest`: country, education, experience
+  - `experience` validated to range 0-50
+  - `education` validated to one of `Undergraduate` or `Postgraduate`
+- `PredictionResponse`: predicted salary values and currency
+- Analytics schema models for summary and chart payloads
+
+`backend/app/schemas/currency_schema.py`
+- `ConvertedSalaryResponse` used for currency conversion responses
+
+3.7 Currency Service
+---------------------
+`backend/app/services/currency_service.py`
+- Defines `COUNTRY_CURRENCY_MAP` linking known countries to currency codes
+- Defines `FALLBACK_RATES` and `CURRENCY_NAME_MAP`
+- Uses external `https://api.exchangerate-api.com/v4/latest/USD`
+- `get_exchange_rates()` returns live rates or fallback rates on failure
+- `convert_currency(amount_usd, target_currency)` multiplies USD amount by the target rate
+- `get_country_currency(country)` returns a currency code or defaults to USD
+- `get_supported_currencies()` returns display names for all supported currency codes
+
+3.8 ML & Preprocessing
+-----------------------
+Machine learning logic resides under `backend/app/ml/`.
+
+`backend/app/ml/preprocessing.py`
+- Loads serialized model artifacts from `app/models/saved_steps.pkl`
+- Provides accessors for:
+  - `get_model()`
+  - `get_country_encoder()`
+  - `get_education_encoder()`
+- `clean_experience(x)` normalization rules:
+  - `More than 50 years` -> `50.0`
+  - `Less than 1 year` -> `0.5`
+  - numeric string parsing and range checking
+- `clean_education(x)` mapping rules:
+  - Bachelor’s degree -> `Undergraduate`
+  - Master’s degree / Professional degree / Other doctoral -> `Postgraduate`
+- `preprocess_input(country, education, experience)`:
+  - encodes country and education with model label encoders
+  - validates experience range
+  - returns feature array for prediction
+  - raises meaningful `ValueError` if input is invalid or unseen
+
+`backend/app/ml/predict_salary.py`
+- `predict_salary(country, education, experience)`:
+  - fetches model from `get_model()`
+  - preprocesses input
+  - uses model `.predict(...)` to infer salary
+- `safe_predict_salary(...)` wraps prediction with error handling and returns `(salary, error)`
+
+`backend/app/ml/train_model.py`
+- Training helper that builds a pipeline from raw survey data
+- Uses `OneHotEncoder` for categorical country and education columns
+- Uses `RandomForestRegressor` as the regressor
+- Writes a pipeline artifact to `backend/app/models/salary_model.pkl`
+- This training script is not part of production runtime, but demonstrates how the dataset can be used to create a model
+
+3.9 Model Artifacts
+---------------------
+`backend/app/models/`
+- `saved_steps.pkl` is the serialized model and encoders used by the API
+- `salary_model.pkl` is another model artifact produced by training script
+- `saved_best_model.pkl` may contain an alternative trained model snapshot
+- `SalaryPrediction.ipynb` is a notebook for exploratory analysis or model development
+
+4. Frontend Architecture
+------------------------
+Frontend root: `frontend/`
+
+Key files:
+- package.json
+- vite.config.js
+- public/index.html
+- src/main.jsx
+- src/App.jsx
+- src/services/api.js
+- src/pages/*.jsx
+- src/components/*.jsx
+- src/styles.css
+- sample_test.csv
+
+Responsibilities:
+- Render the multi-page UI using React Router
+- Submit prediction requests to the backend
+- Upload and validate batch CSV files locally
+- Display analytics charts and filters
+- Perform client-side currency conversion flows
+- Manage loading, error states, and user interactions
+
+4.1 Frontend Entry Points
+--------------------------
+`frontend/src/main.jsx`
+- Mounts React application into `#root`
+- Wraps `<App />` with React Router's `BrowserRouter`
+- Imports global styles from `styles.css`
+
+`frontend/src/App.jsx`
+- Uses React Router `<Routes>` and `<Route>`
+- Redirects `/` to `/individual`
+- Routes:
+  - `/individual` -> `IndividualPredictPage`
+  - `/batch` -> `BatchPredictPage`
+  - `/explore` -> `ExplorePage`
+- Renders `Navbar`, `Footer`, and global `Toaster`
+
+4.2 API Service Layer
+---------------------
+`frontend/src/services/api.js`
+- Base URL configured from `import.meta.env.VITE_API_URL` or `/api`
+- Defines Axios endpoints:
+  - `predictSalary(data)` -> `POST /predict`
+  - `convertSalary(original_salary_usd, target_currency)` -> `POST /convert-salary`
+  - `getSupportedCurrencies()` -> `GET /currencies`
+  - `uploadCSV(formData)` -> `POST /upload-csv`
+  - `fetchAnalytics()` -> `GET /analytics`
+  - `fetchFilteredAnalytics(countries)` -> `POST /analytics/filter`
+
+Deployment proxy:
+- `vite.config.js` proxies `/api` to `http://localhost:8000`
+- This enables frontend development without CORS issues
+
+4.3 Page Components
+--------------------
+`frontend/src/pages/IndividualPredictPage.jsx`
+- Contains a landing page for single-instance salary prediction
+- Uses `PredictionForm` inside a styled card layout
+- Provides heading, description, and trust badges
+
+`frontend/src/pages/BatchPredictPage.jsx`
+- Contains a landing page for batch CSV predictions
+- Uses `CsvUploader` inside a styled card layout
+- Provides instructions and sample/trust messaging
+
+`frontend/src/pages/ExplorePage.jsx`
+- Analytics dashboard page with filter sidebar and charts
+- Loads analytics data from backend using `fetchAnalytics`
+- Displays filters for countries, education levels, and experience range
+- Supports toggling which charts are visible
+- Supports chart maximization via modal overlay
+
+4.4 Component Architecture
+--------------------------
+`frontend/src/components/PredictionForm.jsx`
+- Local state:
+  - `country`, `education`, `experience`
+  - `prediction`, `loading`, `error`
+- Handles user input and controls submission
+- Submits prediction data through `predictSalary`
+- Shows `ResultCard` on success
+- Uses `LoadingSpinner` while waiting
+
+`frontend/src/components/ResultCard.jsx`
+- Displays predicted salary summary
+- Loads supported currencies from backend
+- Offers an expandable currency conversion panel
+- Uses `convertSalary()` to convert from USD to selected currency
+- Handles conversion loading and error states
+
+`frontend/src/components/CsvUploader.jsx`
+- Local state:
+  - `file`, `uploading`, `result`, `convertedResults`
+  - `targetCurrency`, `supportedCurrencies`
+  - `conversionLoading`, `conversionError`
+- Validates CSV client-side before upload
+  - requires `Country`, `EdLevel`, `YearsCodePro` headers exactly
+- Uses `uploadCSV` to send multipart file data to the backend
+- Displays prediction results in a table
+- Supports batch currency conversion after prediction results arrive
+- Downloads a sample CSV with correct format
+
+`frontend/src/components/Navbar.jsx`
+- Sticky top navigation bar
+- Uses React Router `Link` and `useLocation`
+- Highlights active route
+
+`frontend/src/components/Footer.jsx`
+- Static footer with attribution text and policy links
+
+`frontend/src/components/LoadingSpinner.jsx`
+- Simple animated spinner for loading states
+
+4.5 Explore Page State and User Interaction
+-------------------------------------------
+Stateful hooks in `ExplorePage.jsx`:
+- `allCountries`, `selectedCountries`, `countrySearch`
+- `allEducationLevels`, `selectedEducationLevels`, `educationSearch`
+- `experienceRange` array `[min, max]`
+- `analytics` payload object
+- `loading`, `error`
+- `chartVisibility` map controlling which charts display
+- `modalChartId` for chart maximization
+
+Filter behavior:
+- Initial load fetches unfiltered analytics
+- Sets all countries and education levels as selected defaults
+- Any change to `selectedCountries`, `selectedEducationLevels`, or `experienceRange` triggers a filtered analytics fetch
+- If zero countries are selected, analytics are reset and loading stops
+
+Search and filtering UI:
+- Country and education search inputs filter visible checkbox lists
+- Select all / clear all buttons modify selections directly
+- Experience uses two sliders for low/high range enforcement
+
+Chart rendering logic:
+- Uses Recharts component library for visualizations
+- Builds multiple chart data shapes from `analytics` payload
+- Chart types used:
+  - `BarChart` for mean salary by country and top paying countries
+  - `LineChart` and `AreaChart` for experience salary trends
+  - `PieChart` for education distribution and country distribution
+  - `ScatterChart` for experience vs mean salary correlation
+  - stacked `BarChart` for education across countries
+- Chart card rendering is conditional based on `chartVisibility`
+- Each chart has a “Max” button to open it in a modal
+
+Data transformation on frontend:
+- `educationPieData` filters education salary distribution by selected education levels
+- `filteredExperiencePoints` restricts experience data to current experience range
+- `topPayingCountries` sorts mean salary list descending and takes top 8
+- `stackedEducationData` groups education-by-country data into shape suitable for stacked bars
+
+Important frontend/backend integration note:
+- `fetchFilteredAnalytics` is implemented to accept extra filter arguments but the backend endpoint only processes countries.
+- The front-end experience and education filters are currently applied only client-side to chart data and not via backend payloads.
+
+5. Data Flow and Business Logic
+--------------------------------
+5.1 Single Prediction Flow
+- User enters country, education level, and experience
+- `PredictionForm` posts to `/api/predict`
+- Backend validates and cleans the input
+- Prediction pipeline encodes features and queries the ML model
+- Raw USD prediction is converted to the country’s currency
+- Frontend displays both converted salary and USD amount
+- `ResultCard` optionally converts the USD value to another currency via `/api/convert-salary`
+
+5.2 Batch Prediction Flow
+- User selects a CSV file and clicks upload
+- `CsvUploader` validates structure locally
+- Frontend sends file to `/api/upload-csv`
+- Backend parses CSV and cleans each row
+- For each valid row, backend predicts salary and attaches `Predicted_Salary_USD`
+- Backend returns result list and error details
+- Frontend shows results table and optionally converts entire batch to another currency
+
+5.3 Analytics Flow
+- `ExplorePage` loads analytics from `GET /api/analytics`
+- Backend computes aggregated statistics and chart data
+- User filter interactions trigger `POST /api/analytics/filter`
+- Backend returns filtered analytics based on selected countries
+- Frontend further filters or formats chart subsets as needed
+
+5.4 Currency Conversion Flow
+- Backend currency service calls external exchange rate API
+- Fallback exchange rates are used if external request fails
+- Supported currencies are returned for dropdowns
+- Both single and batch conversion workflows rely on the same currency service
+
+6. Folder-by-Folder Breakdown
+-----------------------------
+backend/
+- `app/`: source code for FastAPI backend
+- `dataset/`: survey dataset used for analytics and training
+- `models/`: serialized sklearn model files and training notebook
+
+backend/app/
+- `main.py`: application entry
+- `routes/`: REST endpoints
+- `schemas/`: request/response models
+- `services/`: helper services like currency conversion
+- `ml/`: ML prediction and preprocessing logic
+- `models/`: model storage path `saved_steps.pkl`
+
+frontend/
+- `src/`: React source files
+- `src/pages/`: page-level views
+- `src/components/`: reusable UI elements
+- `src/services/`: backend API wrapper
+- `src/utils/`: utility helpers (currently empty file present)
+- `public/`: static assets served by Vite
+- `index.html`: SPA HTML shell
+- `styles.css`: project styling utilities and global CSS
+
+7. Deployment and Environment
+-----------------------------
+Docker Compose configuration:
+- Defines two services: `backend` and `frontend`
+- Backend built from `backend/Dockerfile`
+- Frontend built from `frontend` directory
+- Backend port `8000:8000`
+- Frontend port `5173:5173`
+- Backend dataset and models mounted as volumes
+
+Backend Dockerfile:
+- Base image: `python:3.10-slim`
+- Installs Python dependencies from `requirements.txt`
+- Copies backend source, dataset, and model artifacts into `/app`
+- Exposes port 8000 and starts Uvicorn
+
+Frontend Vite config:
+- Runs dev server on port 5173
+- Proxies `/api` requests to `http://localhost:8000`
+
+8. Dependencies
+----------------
+Backend dependencies:
+- fastapi
+- uvicorn
+- pandas
+- scikit-learn
+- numpy
+- python-multipart
+- joblib
+- httpx
+
+Frontend dependencies:
+- react
+- react-dom
+- react-hot-toast
+- react-router-dom
+- recharts
+- axios
+- tailwindcss
+- vite
+
+9. Integration Summary
+----------------------
+- Frontend sends prediction and analytics requests to the backend API under `/api`
+- Backend uses a serialized ML model and dataset to compute predictions and analytics
+- The model encoder mapping must match the input categories accepted by the frontend country list
+- The frontend includes a complete country selection list hardcoded in `PredictionForm.jsx`
+- CSV upload and analytics pages enforce structured input formats
+- Currency conversion is shared between single and batch workflows but uses repeated requests in batch mode
+
+10. Known Implementation Notes
+-------------------------------
+- `frontend/src/utils/helpers.js` is present but currently empty
+- `backend/app/ml/evaluate_model.py` exists but has no implementation
+- Frontend `ExplorePage.jsx` passes extra filters to `fetchFilteredAnalytics` that backend does not process
+- Batch CSV conversion currently issues one conversion request per row, which can be optimized by a single batch endpoint
+- The backend currency map is limited to a handful of countries and defaults unknown countries to USD
+
+11. Recommendations for Further Enhancement
+-------------------------------------------
+- Align backend analytics filter API with frontend experience and education filters
+- Add robust error handling and validation for backend `predict` country values
+- Cache exchange rates in the backend to avoid repeated remote calls
+- Add a bulk currency conversion endpoint for batch CSV conversions
+- Implement frontend data export for converted batch results
+- Populate `frontend/src/utils/helpers.js` with shared formatting utilities
+- Add automated tests for API routes and key frontend components
+
+12. File Interaction Map
+------------------------
+- `frontend/src/components/PredictionForm.jsx` -> `frontend/src/services/api.js` -> `backend/app/routes/predict.py`
+- `frontend/src/components/ResultCard.jsx` -> `backend/app/routes/predict.py` and `backend/app/services/currency_service.py`
+- `frontend/src/components/CsvUploader.jsx` -> `frontend/src/services/api.js` -> `backend/app/routes/upload.py`
+- `frontend/src/pages/ExplorePage.jsx` -> `frontend/src/services/api.js` -> `backend/app/routes/analytics.py`
+- `backend/app/routes/analytics.py` -> `backend/app/ml/preprocessing.py` -> `backend/dataset/survey_results_public.csv`
+- `backend/app/routes/predict.py` -> `backend/app/ml/predict_salary.py` -> `backend/app/ml/preprocessing.py` -> `backend/app/models/saved_steps.pkl`
+
+This document provides a detailed summary of the project structure, workflow, components, API flow, state management, routing, chart behaviors, filtering logic, backend integration, and architecture.
