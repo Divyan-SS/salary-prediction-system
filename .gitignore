@@ -1,15 +1,43 @@
+# =========================
 # Python
+# =========================
 venv/
 __pycache__/
 *.pyc
 .env
 
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.env
+
+# =========================
 # Jupyter
+# =========================
 .ipynb_checkpoints/
 
+# =========================
 # Node
+# =========================
 node_modules/
+frontend/node_modules/
 
+# Vite Build
+dist/
+frontend/dist/
+
+# Frontend env
+frontend/.env
+
+# =========================
 # OS
+# =========================
 Thumbs.db
 .DS_Store
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/

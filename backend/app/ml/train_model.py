@@ -10,7 +10,7 @@ import joblib
 from pathlib import Path
 
 # =========================================================
-# 📂 SAFE PATH (LOCAL / RENDER / DOCKER SAFE)
+# 📂 SAFE PATH (WORKS ANYWHERE: LOCAL / SERVER / DOCKER)
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_PATH = BASE_DIR / "dataset" / "survey_results_public.csv"
@@ -27,36 +27,15 @@ df = pd.read_csv(DATA_PATH)
 df = df[["Country", "EdLevel", "YearsCodePro", "ConvertedComp"]]
 df = df.dropna()
 
-# =========================================================
-# 🔧 FIX: CLEAN "YearsCodePro" PROPERLY (VERY IMPORTANT)
-# =========================================================
-def convert_experience(x):
-    if pd.isna(x):
-        return np.nan
+# Convert experience safely
+df["YearsCodePro"] = pd.to_numeric(df["YearsCodePro"], errors="coerce")
+df = df.dropna()
 
-    x = str(x).strip()
-
-    if x == "Less than 1 year":
-        return 0.5
-    if x == "More than 50 years":
-        return 50
-
-    try:
-        return float(x)
-    except:
-        return np.nan
-
-
-df["YearsCodePro"] = df["YearsCodePro"].apply(convert_experience)
-df = df.dropna(subset=["YearsCodePro"])
-
-# =========================================================
-# 🚫 OUTLIER REMOVAL
-# =========================================================
+# Remove extreme outliers (important for ML stability)
 df = df[(df["ConvertedComp"] > 1000) & (df["ConvertedComp"] < 500000)]
 
 # =========================================================
-# 📊 FEATURES & TARGET
+# 📊 SPLIT FEATURES & TARGET
 # =========================================================
 X = df[["Country", "EdLevel", "YearsCodePro"]]
 y = df["ConvertedComp"]
@@ -75,16 +54,17 @@ X_train, X_test, y_train, y_test = train_test_split(
 # 🔧 PREPROCESSOR
 # =========================================================
 categorical = ["Country", "EdLevel"]
+numeric = ["YearsCodePro"]
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical)
     ],
-    remainder="passthrough"  # keeps YearsCodePro as numeric
+    remainder="passthrough"
 )
 
 # =========================================================
-# 🌲 MODEL
+# 🌲 MODEL (OPTIMIZED RANDOM FOREST)
 # =========================================================
 model = Pipeline([
     ("preprocessor", preprocessor),
@@ -96,7 +76,7 @@ model = Pipeline([
 ])
 
 # =========================================================
-# 🧠 TRAIN
+# 🧠 TRAIN MODEL
 # =========================================================
 model.fit(X_train, y_train)
 
@@ -114,9 +94,10 @@ print(f"R2 Score: {r2:.4f}")
 print("===================================================\n")
 
 # =========================================================
-# 💾 SAVE MODEL
+# 💾 SAVE MODEL (DEPLOYMENT READY)
 # =========================================================
 MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 joblib.dump(model, MODEL_PATH)
 
 print(f"Model trained successfully and saved at: {MODEL_PATH}")
