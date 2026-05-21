@@ -3,10 +3,9 @@ import numpy as np
 from pathlib import Path
 
 # =========================================================
-# 📦 SAFE MODEL PATH (LOCAL + RENDER + DOCKER SAFE)
+# 📦 SAFE MODEL PATH (LOCAL + RENDER SAFE)
 # =========================================================
 
-# Go to backend/app/models
 BASE_DIR = Path(__file__).resolve().parent.parent
 _MODEL_PATH = BASE_DIR / "models" / "saved_steps.pkl"
 
@@ -14,7 +13,7 @@ _model_data = None
 
 
 # =========================================================
-# ⚡ LOAD MODEL (CACHED - LOAD ONCE ONLY)
+# ⚡ LOAD MODEL (CACHED)
 # =========================================================
 def load_model_data():
     global _model_data
@@ -87,7 +86,7 @@ def clean_experience(x):
 
 
 # =========================================================
-# 🎓 EDUCATION CLEANING
+# 🎓 EDUCATION CLEANING (FIXED)
 # =========================================================
 def clean_education(x):
     if isinstance(x, str):
@@ -98,8 +97,8 @@ def clean_education(x):
 
         if (
             "Master’s degree" in x
-            or "Professional degree"
-            or "Other doctoral"
+            or "Professional degree" in x
+            or "Other doctoral" in x
         ):
             return "Postgraduate"
 
