@@ -1,11 +1,10 @@
-# backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import predict, upload, analytics, health
 import traceback
 
 # =========================================================
-# 🚀 APP INIT (Must be first)
+# 🚀 APP INIT
 # =========================================================
 app = FastAPI(
     title="Salary Prediction API",
@@ -13,7 +12,7 @@ app = FastAPI(
 )
 
 # =========================================================
-# 🌐 CORS CONFIG (Now safely placed AFTER app init)
+# 🌐 CORS CONFIG
 # =========================================================
 app.add_middleware(
     CORSMiddleware,
@@ -29,34 +28,32 @@ app.add_middleware(
 )
 
 # =========================================================
-# 🔌 ROUTES
+# 🔌 ROUTES (Mounting all routers under /api)
 # =========================================================
+# The prefix='/api' here will turn router.get('/analytics') 
+# into /api/analytics
 app.include_router(predict.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(health.router, prefix="/api")
 
 # =========================================================
-# 🏠 ROOT ENDPOINT
+# 🏠 ROOT ENDPOINTS
 # =========================================================
 @app.get("/")
 def root():
     return {"message": "Salary Prediction API is running"}
 
-# =========================================================
-# ❤️ HEALTH CHECK
-# =========================================================
 @app.get("/healthz")
 def health_check():
     return {"status": "ok"}
 
 # =========================================================
-# 🛡️ GLOBAL ERROR DEBUG
+# 🛡️ ERROR LOGGING
 # =========================================================
 @app.on_event("startup")
 def startup_event():
     try:
         print("🚀 Server starting successfully...")
     except Exception:
-        print("❌ Startup error:")
         print(traceback.format_exc())

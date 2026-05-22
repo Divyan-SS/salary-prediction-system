@@ -1,5 +1,15 @@
 from pydantic import BaseModel, Field, validator
-from typing import List
+from typing import List, Dict
+
+class CurrencyRates(BaseModel):
+    rates: Dict[str, float]
+    base: str
+
+class ConvertedSalaryResponse(BaseModel):
+    original_salary_usd: float
+    converted_salary: float
+    original_currency: str
+    target_currency: str
 
 class PredictionRequest(BaseModel):
     country: str
@@ -8,8 +18,6 @@ class PredictionRequest(BaseModel):
 
     @validator('education')
     def validate_education(cls, v):
-        # 🌟 STRICT VALIDATION: Only accept the normalized strings.
-        # Sanitization now happens in the route, so we only permit final states here.
         allowed_values = ['Undergraduate', 'Postgraduate']
         if v not in allowed_values:
             raise ValueError('Education must be "Undergraduate" or "Postgraduate"')
