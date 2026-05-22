@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import api from '../services/api'; // 🌟 Import the default Axios instance directly to resolve bundling export errors
 
 // ─── Zoom-Adaptive Deep Navy Neural Matrix Background ────────
 function NeuralCanvas() {
@@ -209,19 +208,6 @@ function NeuralCanvas() {
 
 // ─── Main Content Component ──────────────────────────────────────────────────
 export default function HomePage() {
-  // ⚡ Silent startup ping using the root instance to wake up Render's Free Tier early
-  useEffect(() => {
-    const triggerHandshake = async () => {
-      try {
-        await api.get('/health');
-        console.log("Core API Handshake Completed: Engine fully live.");
-      } catch (err) {
-        console.log("Engine waking up from standby cluster initialization state...", err.message);
-      }
-    };
-    triggerHandshake();
-  }, []);
-
   return (
     <>
       <style>{`
@@ -355,7 +341,7 @@ export default function HomePage() {
 
           <div className="mt-16 sm:mt-24 text-center">
             <div className="relative flex flex-col justify-start items-start w-full max-w-2xl group mx-auto">
-              <div className="absolute w-full h-full opacity-25 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%)', filter: 'blur(55px)' }} />
+              <div className="absolute w-full h-[260px] md:h-[300px] opacity-25 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%)', filter: 'blur(55px)' }} />
               <div className="self-stretch rounded-[40px] z-10 overflow-hidden glass-panel">
                 <div className="w-full h-full p-6 sm:p-8 md:p-10 flex flex-col items-center justify-center backdrop-blur-md">
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: "var(--font-display)" }}>Ready to see your worth?</h2>
