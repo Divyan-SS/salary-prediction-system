@@ -17,29 +17,29 @@ const api = axios.create({
 });
 
 // =================================================
-// 📊 API FUNCTIONS
+// 📊 API FUNCTIONS (🌟 SYNCED WITH /api ROUTE PREFIX)
 // =================================================
 
 export const predictSalary = (data) =>
-  api.post('/predict', data);
+  api.post('/api/predict', data); // Added /api prefix
 
 export const convertSalary = (original_salary_usd, target_currency) =>
-  api.post('/convert-salary', null, {
+  api.post('/api/convert-salary', null, { // Added /api prefix
     params: { original_salary_usd, target_currency },
   });
 
 export const getSupportedCurrencies = () =>
-  api.get('/currencies');
+  api.get('/api/currencies'); // Added /api prefix
 
 export const uploadCSV = (formData) =>
-  api.post('/upload-csv', formData, {
+  api.post('/api/upload-csv', formData, { // Added /api prefix
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const fetchAnalytics = () =>
-  api.get('/analytics');
+  api.get('/api/analytics'); // Added /api prefix
 
 export const fetchFilteredAnalytics = (countries) =>
-  api.post('/analytics/filter', { countries });
+  api.post('/api/analytics/filter', { countries }); // Added /api prefix
 
 export default api;
