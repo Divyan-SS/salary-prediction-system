@@ -1,18 +1,18 @@
-# backend/app/routes/predict.py
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from typing import Dict
 import logging
 import pandas as pd
 import io
 
-# 🌟 Absolute imports based on Root Directory = 'backend'
+# 🌟 FIX: Absolute imports based on Root Directory = 'backend'
 from app.schemas.salary_schema import (
     PredictionRequest, 
     PredictionResponse, 
     ConvertedSalaryResponse
 )
+
 from app.ml.predict_salary import predict_salary
-from app.ml.preprocessing import clean_education
+from app.ml.preprocessing import clean_education # Added new normalization
 from app.services.currency_service import (
     convert_currency,
     get_country_currency,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Prediction"])
 
 # =========================================================
-# 🔮 PREDICTION ENDPOINT (Single)
+# 🔮 PREDICTION ENDPOINT
 # =========================================================
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_salary_endpoint(request: PredictionRequest):
@@ -76,12 +76,12 @@ async def upload_csv_endpoint(file: UploadFile = File(...)):
         
         for index, row in df.iterrows():
             try:
-                # 1. Normalize Education
+                # Normalize Education
                 clean_edu = clean_education(row['EdLevel'])
                 if clean_edu is None:
                     raise ValueError("Invalid education level")
 
-                # 2. Perform Prediction
+                # Perform Prediction
                 salary_usd = predict_salary(
                     country=row['Country'],
                     education=clean_edu,
@@ -92,13 +92,12 @@ async def upload_csv_endpoint(file: UploadFile = File(...)):
                     "Country": row['Country'],
                     "EdLevel": clean_edu,
                     "YearsCodePro": row['YearsCodePro'],
-                    "Predicted_Salary_USD": round(float(salary_usd), 2)
+                    "PredictedSalary": round(float(salary_usd), 2)
                 })
             except Exception as e:
-                # Capture row index (1-based index + header = +2)
                 errors.append({
-                    "row": index + 2,
-                    "country": row.get('Country', 'Unknown'),
+                    "row": index + 2, # +2 to account for 0-index and header
+                    "country": row['Country'],
                     "error": str(e)
                 })
         
@@ -109,7 +108,7 @@ async def upload_csv_endpoint(file: UploadFile = File(...)):
             "total_rows": len(df)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =========================================================
 # 💱 CONVERT SALARY
