@@ -21,6 +21,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
+        "https://salary-prediction-system-mu.vercel.app",  # 🌟 NEW VERCEL PRODUCTION DOMAIN
         "https://salary-prediction-system-xi.vercel.app",
         "https://salary-prediction-system-git-main-divyan-s-s-projects.vercel.app",
         "https://salary-prediction-system-frontend.vercel.app"
