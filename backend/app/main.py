@@ -12,7 +12,7 @@ app = FastAPI(
 )
 
 # =========================================================
-# 🌐 CORS CONFIG
+# 🌐 CORS CONFIG (Updated to be strictly permissive for production)
 # =========================================================
 app.add_middleware(
     CORSMiddleware,
@@ -21,25 +21,21 @@ app.add_middleware(
         "http://localhost:3000",
         "https://salary-prediction-system-mu.vercel.app"
     ],
-    allow_origin_regex=r"https://.*.vercel.app",
+    # Add this to help with preflight 404s
+    allow_origin_regex=r"https://.*.vercel.app", 
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
 # =========================================================
-# 🔌 ROUTES (Mounting all routers under /api)
+# 🔌 ROUTES
 # =========================================================
-# The prefix='/api' here will turn router.get('/analytics') 
-# into /api/analytics
 app.include_router(predict.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(health.router, prefix="/api")
 
-# =========================================================
-# 🏠 ROOT ENDPOINTS
-# =========================================================
 @app.get("/")
 def root():
     return {"message": "Salary Prediction API is running"}
@@ -47,13 +43,3 @@ def root():
 @app.get("/healthz")
 def health_check():
     return {"status": "ok"}
-
-# =========================================================
-# 🛡️ ERROR LOGGING
-# =========================================================
-@app.on_event("startup")
-def startup_event():
-    try:
-        print("🚀 Server starting successfully...")
-    except Exception:
-        print(traceback.format_exc())
