@@ -19,7 +19,6 @@ def load_and_clean_data():
         return _df_cache
 
     if not DATASET_PATH.exists():
-        # This will now give you a clear error in Render logs if the path is still wrong
         raise FileNotFoundError(f"Dataset NOT FOUND at: {DATASET_PATH}")
 
     df = pd.read_csv(DATASET_PATH)
@@ -74,6 +73,17 @@ def build_analytics_payload(df):
     edu_salary = df.groupby("EdLevel")["Salary"].agg(['mean', 'count']).reset_index()
     education_salary_distribution = [{"category": row['EdLevel'], "mean_salary": round(row['mean'], 2), "count": int(row['count'])} for _, row in edu_salary.iterrows()]
 
+    # 🌟 FIX: Generate cross-grouped matrix data required for the stacked chart component
+    edu_country_salary = df.groupby(["Country", "EdLevel"])["Salary"].mean().reset_index()
+    education_salary_by_country = [
+        {
+            "country": row['Country'],
+            "education": row['EdLevel'],
+            "mean_salary": round(row['Salary'], 2)
+        }
+        for _, row in edu_country_salary.iterrows()
+    ]
+
     return {
         "summary_stats": summary_stats,
         "mean_salary_by_country": mean_by_country,
@@ -81,6 +91,7 @@ def build_analytics_payload(df):
         "salary_distribution": salary_distribution,
         "education_salary_distribution": education_salary_distribution,
         "country_distribution": country_distribution,
+        "education_salary_by_country": education_salary_by_country # Added missing payload key
     }
 
 class FilterRequest(BaseModel):
