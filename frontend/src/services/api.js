@@ -3,13 +3,13 @@ import axios from 'axios';
 // =================================================
 // 🌍 API BASE (WORKS IN LOCAL + VERCEL + RENDER)
 // =================================================
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
-// Remove trailing slash if exists
-const صافBase = API_BASE.replace(/\/$/, '');
+// Remove trailing slash if it exists safely
+const cleanBase = API_BASE.replace(/\/$/, '');
 
 const api = axios.create({
-  baseURL: صافBase,
+  baseURL: cleanBase,
   headers: {
     'Content-Type': 'application/json',
   },
