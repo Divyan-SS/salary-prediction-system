@@ -6,7 +6,7 @@ import axios from 'axios';
 // =================================================
 const API_BASE = import.meta.env.VITE_API_URL || 'https://salary-backend-z83u.onrender.com';
 
-// Remove trailing slash if it exists safely to prevent duplicate slash routing errors
+// Remove trailing slash if it exists safely
 const cleanBase = API_BASE.replace(/\/$/, '');
 
 const api = axios.create({
@@ -21,25 +21,25 @@ const api = axios.create({
 // =================================================
 
 export const predictSalary = (data) =>
-  api.post('/api/predict', data); // Added /api prefix
+  api.post('/api/predict', data);
 
 export const convertSalary = (original_salary_usd, target_currency) =>
-  api.post('/api/convert-salary', null, { // Added /api prefix
+  api.post('/api/convert-salary', null, {
     params: { original_salary_usd, target_currency },
   });
 
 export const getSupportedCurrencies = () =>
-  api.get('/api/currencies'); // Added /api prefix
+  api.get('/api/currencies');
 
 export const uploadCSV = (formData) =>
-  api.post('/api/upload-csv', formData, { // Added /api prefix
+  api.post('/api/upload-csv', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
 export const fetchAnalytics = () =>
-  api.get('/api/analytics'); // Added /api prefix
+  api.get('/api/analytics');
 
 export const fetchFilteredAnalytics = (countries) =>
-  api.post('/api/analytics/filter', { countries }); // Added /api prefix
+  api.post('/api/analytics/filter', { countries });
 
 export default api;
