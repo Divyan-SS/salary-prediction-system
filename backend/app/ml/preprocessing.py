@@ -43,7 +43,7 @@ def get_education_encoder():
 
 
 # =========================================================
-# 🔥 PREPROCESS INPUT
+# 🔥 PREPROCESS INPUT (FIXED NORMALIZATION)
 # =========================================================
 def preprocess_input(country: str, education: str, experience):
     model_data = load_model_data()
@@ -51,8 +51,12 @@ def preprocess_input(country: str, education: str, experience):
     le_country = model_data["le_country"]
     le_education = model_data["le_education"]
 
-    if education not in ["Undergraduate", "Postgraduate"]:
-        raise ValueError("Invalid education level")
+    # Normalize education input
+    norm_education = clean_education(education)
+    
+    # Validation
+    if norm_education not in ["Undergraduate", "Postgraduate"]:
+        raise ValueError(f"Invalid education level: {education}")
 
     try:
         country_enc = le_country.transform([country])[0]
@@ -60,9 +64,9 @@ def preprocess_input(country: str, education: str, experience):
         raise ValueError(f"Unsupported country: {country}")
 
     try:
-        edu_enc = le_education.transform([education])[0]
-    except:
-        raise ValueError("Education encoding failed")
+        edu_enc = le_education.transform([norm_education])[0]
+    except Exception as e:
+        raise ValueError(f"Education encoding failed: {str(e)}")
 
     try:
         experience = float(experience)
@@ -76,10 +80,9 @@ def preprocess_input(country: str, education: str, experience):
 
 
 # =========================================================
-# 🧹 BULK CSV UPLOAD CLEANING CLEANERS (ADDITIONS)
+# 🧹 BULK CSV UPLOAD CLEANING CLEANERS
 # =========================================================
 def clean_experience(x):
-    """Converts raw experience text data to standard floats"""
     if x == 'More than 50 years':
         return 50
     if x == 'Less than 1 year':
@@ -90,11 +93,10 @@ def clean_experience(x):
         return 0.0
 
 def clean_education(x):
-    """Normalizes raw survey categories into standard strings"""
     if not isinstance(x, str):
         return "Undergraduate"
     if "Bachelor's degree" in x or "Professional degree" in x:
         return "Undergraduate"
     if "Master's degree" in x or "Other doctoral" in x:
         return "Postgraduate"
-    return "Undergraduate"
+    return x if x in ["Undergraduate", "Postgraduate"] else "Undergraduate"

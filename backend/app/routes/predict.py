@@ -1,4 +1,3 @@
-# backend/app/routes/predict.py
 from fastapi import APIRouter, HTTPException
 from typing import Dict
 import logging
@@ -18,8 +17,6 @@ from app.services.currency_service import (
 # =========================================================
 logger = logging.getLogger(__name__)
 
-# 🌟 FIXING THE DOUBLE ROUTE SUFFIX BUG
-# Removed the duplicate prefix="/api" configuration parameter to ensure endpoints resolve on /api/predict
 router = APIRouter(tags=["Prediction"])
 
 
@@ -29,18 +26,22 @@ router = APIRouter(tags=["Prediction"])
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_salary_endpoint(request: PredictionRequest):
     try:
+        # Sanitization: Clean quotes and whitespace before hitting the ML pipeline
+        clean_edu = request.education.replace("’", "'").strip()
+        clean_country = request.country.strip()
+
         logger.info(
-            f"Prediction request: country={request.country}, "
-            f"education={request.education}, experience={request.experience}"
+            f"Prediction request: country={clean_country}, "
+            f"education={clean_edu}, experience={request.experience}"
         )
 
         salary_usd = predict_salary(
-            country=request.country,
-            education=request.education,
+            country=clean_country,
+            education=clean_edu,
             experience=request.experience
         )
 
-        target_currency = get_country_currency(request.country)
+        target_currency = get_country_currency(clean_country)
         converted_salary = await convert_currency(salary_usd, target_currency)
 
         return PredictionResponse(

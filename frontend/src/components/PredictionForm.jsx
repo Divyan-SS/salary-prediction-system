@@ -1,3 +1,4 @@
+//frontend/src/components/PredictionForm.jsx
 import { useState } from 'react';
 import { predictSalary } from '../services/api';
 import ResultCard from './ResultCard';
@@ -8,12 +9,6 @@ const countries = [
   "Brazil", "France", "Spain", "Australia", "Netherlands",
   "Poland", "Italy", "Russian Federation", "Sweden"
 ];
-
-// ─── ML MODEL MAPPING OBJECTS ──────────────────────────────────────────────
-const EDUCATION_MAPPING = {
-  'Undergraduate': "Bachelor’s degree",
-  'Postgraduate': "Master’s degree"
-};
 
 export default function PredictionForm() {
   const [country, setCountry] = useState('United States');
@@ -30,12 +25,11 @@ export default function PredictionForm() {
     setPrediction(null);
     
     try {
-      const mappedEducation = EDUCATION_MAPPING[uiEducation] || uiEducation;
-
+      // 🌟 FIXED: Sent uiEducation directly to match backend Pydantic validation
       const payload = {
         country: country,
-        education: mappedEducation,
-        experience: parseFloat(experience) // 🌟 FIXED: Changed float() to native parseFloat()
+        education: uiEducation, 
+        experience: parseFloat(experience)
       };
 
       const response = await predictSalary(payload);
@@ -78,7 +72,6 @@ export default function PredictionForm() {
 
       <div className="space-y-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Country Select */}
           <div className="animate-fade-slide">
             <label className="block text-sm font-semibold text-slate-300 mb-2">Country</label>
             <select
@@ -87,14 +80,11 @@ export default function PredictionForm() {
               className="w-full input-glass rounded-2xl px-4 py-3 text-white focus:outline-none transition-all"
             >
               {countries.map(c => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
 
-          {/* Education Level Pills */}
           <div className="animate-fade-slide" style={{ animationDelay: "0.05s" }}>
             <label className="block text-sm font-semibold text-slate-300 mb-3">Education Level</label>
             <div className="grid grid-cols-2 gap-3">
@@ -115,7 +105,6 @@ export default function PredictionForm() {
             </div>
           </div>
 
-          {/* Experience Slider */}
           <div className="animate-fade-slide" style={{ animationDelay: "0.1s" }}>
             <div className="flex justify-between mb-2">
               <label className="text-sm font-semibold text-slate-300">Years of Experience</label>
@@ -133,7 +122,6 @@ export default function PredictionForm() {
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -148,12 +136,7 @@ export default function PredictionForm() {
 
         {error && (
           <div className="bg-red-950/40 border border-red-900/60 rounded-2xl p-4 text-red-400 text-sm animate-fade-slide">
-            <div className="flex gap-2 items-start">
-              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>{error}</span>
-            </div>
+            <span>{error}</span>
           </div>
         )}
 
