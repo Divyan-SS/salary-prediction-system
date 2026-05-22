@@ -474,7 +474,7 @@ export default function ExplorePage() {
       .slice(0, 8);
   }, [analytics]);
 
-  // FIX: Isolated parsing matrix checking separate keys for Country and EdLevel to avoid overlapping fallback issues
+  // FIX: Fixed item text parsing normalizers using native Math.round(Number(...)) JS standards
   const stackedEducationData = useMemo(() => {
     const rawList = analytics?.education_salary_by_country || [];
     if (!rawList.length) return [];
@@ -497,7 +497,7 @@ export default function ExplorePage() {
       if (!grouped[ctry]) {
         grouped[ctry] = { country: ctry };
       }
-      grouped[ctry][eduLevel] = round(float(salary), 2);
+      grouped[ctry][eduLevel] = Math.round(Number(salary));
     });
     
     return Object.values(grouped);
