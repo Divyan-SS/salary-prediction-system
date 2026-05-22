@@ -231,7 +231,10 @@ export default function CsvUploader({ onPredictionComplete }) {
 
     try {
       if (targetCurrency === 'USD') {
-        const resetResults = result.results.map((row) => ({ ...row, Converted_Salary: row.Predicted_Salary_USD }));
+        const resetResults = result.results.map((row) => ({ 
+          ...row, 
+          Converted_Salary: row.Predicted_Salary_USD ?? row.PredictedSalary 
+        }));
         setConvertedResults(resetResults);
         if (onPredictionComplete) onPredictionComplete(resetResults);
         return;
@@ -239,14 +242,16 @@ export default function CsvUploader({ onPredictionComplete }) {
 
       const converted = await Promise.all(
         result.results.map(async (row) => {
-          if (typeof row.Predicted_Salary_USD !== 'number') {
+          // Robust mapping to catch either variant returned by the upload endpoint
+          const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
+          if (typeof baseUsd !== 'number') {
             return { ...row, Converted_Salary: null };
           }
 
-          const response = await convertSalary(row.Predicted_Salary_USD, targetCurrency);
+          const response = await convertSalary(baseUsd, targetCurrency);
           return {
             ...row,
-            Converted_Salary: response.data.converted_salary,
+            Converted_Salary: response.data.converted_salary ?? response.data.predicted_salary,
           };
         })
       );
@@ -279,13 +284,13 @@ export default function CsvUploader({ onPredictionComplete }) {
   }, []);
 
   const canConvert = result?.results?.length > 0;
+  const activeTableRows = convertedResults || result?.results || [];
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
-        /* CRITICAL CSS FIX: Override native cursors for global custom cursor support */
         @media (hover:hover) and (pointer:fine) {
           *, html, body, a, button, select, input, label {
             cursor: none !important;
@@ -426,7 +431,6 @@ export default function CsvUploader({ onPredictionComplete }) {
                 <button
                   onClick={clearSelectedFile}
                   className="p-1.5 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-lg text-slate-400 hover:text-white transition flex-shrink-0"
-                  title="Remove selected file"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -464,7 +468,7 @@ export default function CsvUploader({ onPredictionComplete }) {
                 </div>
                 
                 <button
-                  onClick={() => downloadResultsCSV(result.results, false)}
+                  onClick={() => downloadResultsCSV(activeTableRows, !!convertedResults)}
                   className="sm:self-center flex items-center gap-1.5 bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-800/60 text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-sm hover:scale-105"
                 >
                   <svg className="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -505,22 +509,31 @@ export default function CsvUploader({ onPredictionComplete }) {
                         <th className="p-3 text-left font-semibold">Country</th>
                         <th className="p-3 text-left font-semibold">Education</th>
                         <th className="p-3 text-left font-semibold">Experience</th>
-                        <th className="p-3 text-left font-semibold">Predicted Salary (USD)</th>
+                        <th className="p-3 text-left font-semibold">Original (USD)</th>
+                        <th className="p-3 text-left font-semibold">Converted ({targetCurrency})</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40 bg-[#141416]/50">
-                      {result.results && result.results.map((row, i) => (
-                        <tr key={i} className="hover:bg-zinc-800/30 transition">
-                          <td className="p-3">{row.Country}</td>
-                          <td className="p-3">{row.EdLevel}</td>
-                          <td className="p-3">{row.YearsCodePro}</td>
-                          <td className="p-3 font-mono text-emerald-400">
-                            {row.Predicted_Salary_USD ?? row.PredictedSalary
-                              ? `$${(row.Predicted_Salary_USD ?? row.PredictedSalary).toLocaleString()}`
-                              : '❌ Error'}
-                          </td>
-                        </tr>
-                      ))}
+                      {activeTableRows.map((row, i) => {
+                        const baseSalary = row.Predicted_Salary_USD ?? row.PredictedSalary;
+                        return (
+                          <tr key={i} className="hover:bg-zinc-800/30 transition">
+                            <td className="p-3">{row.Country}</td>
+                            <td className="p-3">{row.EdLevel}</td>
+                            <td className="p-3">{row.YearsCodePro}</td>
+                            <td className="p-3 font-mono text-emerald-400">
+                              {typeof baseSalary === 'number'
+                                ? `$${baseSalary.toLocaleString()}`
+                                : '❌ Error'}
+                            </td>
+                            <td className="p-3 font-mono text-sky-400">
+                              {typeof row.Converted_Salary === 'number'
+                                ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
+                                : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -598,76 +611,6 @@ export default function CsvUploader({ onPredictionComplete }) {
                 )}
               </div>
             </div>
-
-            {/* Converted Results Section Container */}
-            {convertedResults && (
-              <div className="glass-panel-dark rounded-[40px] shadow-sm transition-all duration-300 overflow-hidden">
-                <div className="p-6 border-b border-zinc-800/60 bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7C5 4 4 5 4 7z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m-4-4h8" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display, 'Space Grotesk', sans-serif)" }}>
-                        Converted Salaries ({targetCurrency})
-                      </h4>
-                      <p className="text-sm text-slate-300">Original USD predictions converted to {targetCurrency}</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => downloadResultsCSV(convertedResults, true)}
-                    className="sm:self-center flex items-center gap-1.5 bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-800/60 text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-sm hover:scale-105"
-                  >
-                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download Results CSV
-                  </button>
-                </div>
-
-                <div className="p-6">
-                  <div className="overflow-auto max-h-96 border border-zinc-800/60 rounded-xl">
-                    <table className="min-w-full text-sm text-gray-300">
-                      <thead className="bg-zinc-900/80 sticky top-0 text-gray-200 backdrop-blur-sm">
-                        <tr>
-                          <th className="p-3 text-left font-semibold">Country</th>
-                          <th className="p-3 text-left font-semibold">Education</th>
-                          <th className="p-3 text-left font-semibold">Experience</th>
-                          <th className="p-3 text-left font-semibold">Original (USD)</th>
-                          <th className="p-3 text-left font-semibold">Converted ({targetCurrency})</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/40 bg-[#141416]/50">
-                        {convertedResults.map((row, i) => {
-                          const baseSalary = row.Predicted_Salary_USD ?? row.PredictedSalary;
-                          return (
-                            <tr key={i} className="hover:bg-zinc-800/30 transition">
-                              <td className="p-3">{row.Country}</td>
-                              <td className="p-3">{row.EdLevel}</td>
-                              <td className="p-3">{row.YearsCodePro}</td>
-                              <td className="p-3 font-mono text-gray-400">
-                                {typeof baseSalary === 'number'
-                                  ? `$${baseSalary.toLocaleString()}`
-                                  : '❌ Error'}
-                              </td>
-                              <td className="p-3 font-mono text-sky-400">
-                                {typeof row.Converted_Salary === 'number'
-                                  ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
-                                  : '—'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
