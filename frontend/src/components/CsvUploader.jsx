@@ -242,7 +242,6 @@ export default function CsvUploader({ onPredictionComplete }) {
 
       const converted = await Promise.all(
         result.results.map(async (row) => {
-          // Robust mapping to catch either variant returned by the upload endpoint
           const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
           if (typeof baseUsd !== 'number') {
             return { ...row, Converted_Salary: null };
@@ -307,13 +306,8 @@ export default function CsvUploader({ onPredictionComplete }) {
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .animate-float {
-          animation: float-in 0.5s ease-out both;
-        }
-        
-        .animate-card-slide {
-          animation: card-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
+        .animate-float { animation: float-in 0.5s ease-out both; }
+        .animate-card-slide { animation: card-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         .glass-panel-dark {
           background: rgba(10, 15, 30, 0.45);
@@ -490,14 +484,14 @@ export default function CsvUploader({ onPredictionComplete }) {
                   )}
                 </div>
 
+                {/* FIX: Removed the .slice(0, 5) restriction and trailing ellipsis label to ensure unpruned output */}
                 {result.errors && result.errors.length > 0 && (
                   <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
                     <p className="text-sm font-semibold text-red-400 mb-2">Errors</p>
-                    <ul className="text-sm text-red-300 list-disc list-inside max-h-32 overflow-y-auto">
-                      {result.errors.slice(0, 5).map((err, i) => (
+                    <ul className="text-sm text-red-300 list-disc list-inside max-h-48 overflow-y-auto space-y-1 custom-scrollbar">
+                      {result.errors.map((err, i) => (
                         <li key={i}>Row {err.row}: {err.country} - {err.error}</li>
                       ))}
-                      {result.errors.length > 5 && <li>... and {result.errors.length - 5} more</li>}
                     </ul>
                   </div>
                 )}
