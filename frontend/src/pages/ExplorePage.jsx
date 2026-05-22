@@ -1,4 +1,4 @@
-//frontend/src/pages/ExplorePage.jsx
+// frontend/src/pages/ExplorePage.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchFilteredAnalytics, fetchAnalytics } from '../services/api';
 import { motion } from 'framer-motion';
@@ -367,7 +367,6 @@ export default function ExplorePage() {
         setLoading(true);
         setError('');
         
-        // Passing filter states matching backend filter targets
         const res = await fetchFilteredAnalytics(selectedCountries);
         if (res?.data) {
           setAnalytics(res.data);
@@ -475,16 +474,18 @@ export default function ExplorePage() {
       .slice(0, 8);
   }, [analytics]);
 
+  // FIX: Fixed item text parsing normalizers tracking precise capitalization strings
   const stackedEducationData = useMemo(() => {
     if (!analytics?.education_salary_by_country) return [];
     const grouped = {};
     analytics.education_salary_by_country.forEach((item) => {
       if (!item) return;
-      const eduLevel = item.education || item.EdLevel;
+      const eduLevel = item.education || item.EdLevel || item.category;
       const ctry = item.country || item.category;
       const salary = item.mean_salary || item.salary || 0;
       
-      if (!selectedEducationLevels.includes(eduLevel)) return;
+      if (!ctry || !eduLevel) return;
+      
       if (!grouped[ctry]) {
         grouped[ctry] = { country: ctry };
       }
@@ -585,7 +586,8 @@ export default function ExplorePage() {
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={12} />
-              {selectedEducationLevels.map((level, idx) => (
+              {/* FIX: Ensure bars are dynamically generated from current tracked filters safely */}
+              {allEducationLevels.filter(lvl => selectedEducationLevels.includes(lvl)).map((level, idx) => (
                 <Bar key={level} dataKey={level} stackId="a" fill={chartColors[idx % chartColors.length]} />
               ))}
             </BarChart>
@@ -709,7 +711,6 @@ export default function ExplorePage() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-            {/* Filter Controls Container Column */}
             <section className="space-y-6">
               <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover">
                 <h2 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters</h2>
@@ -787,7 +788,6 @@ export default function ExplorePage() {
               </div>
             </section>
 
-            {/* Dashboard Graphics Visualization Stream */}
             <section className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
