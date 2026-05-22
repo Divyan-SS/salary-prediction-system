@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict
 import logging
 
-# 🌟 FIX: Unified schema import
+# 🌟 FIX: Absolute imports based on Root Directory = 'backend'
+# Since we are setting Root Directory to 'backend', we start imports from 'app'
 from app.schemas.salary_schema import (
     PredictionRequest, 
     PredictionResponse, 
@@ -10,7 +11,7 @@ from app.schemas.salary_schema import (
 )
 
 from app.ml.predict_salary import predict_salary
-from app.utils.currency_utils import (
+from app.services.currency_service import (
     convert_currency,
     get_country_currency,
     get_supported_currencies
@@ -21,7 +22,7 @@ from app.utils.currency_utils import (
 # =========================================================
 logger = logging.getLogger(__name__)
 
-# 🌟 FIX: Removed prefix="/api" (main.py handles it)
+# Router without prefix (main.py adds it)
 router = APIRouter(tags=["Prediction"])
 
 # =========================================================
@@ -30,7 +31,7 @@ router = APIRouter(tags=["Prediction"])
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_salary_endpoint(request: PredictionRequest):
     try:
-        # Sanitization: Ensure clean input strings
+        # Sanitization
         clean_edu = request.education.replace("’", "'").strip()
         clean_country = request.country.strip()
 
