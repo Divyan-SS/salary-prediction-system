@@ -8,6 +8,7 @@ from pathlib import Path
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 _MODEL_PATH = BASE_DIR / "models" / "saved_steps.pkl"
+
 _model_data = None
 
 # =========================================================
@@ -23,17 +24,29 @@ def load_model_data():
     return _model_data
 
 # =========================================================
-# 🔥 SMART EDUCATION NORMALIZATION (IMPROVED)
+# 🤖 GETTERS (REQUIRED FOR ARCHITECTURAL STABILITY)
+# =========================================================
+def get_model():
+    return load_model_data()["model"]
+
+def get_country_encoder():
+    return load_model_data()["le_country"]
+
+def get_education_encoder():
+    return load_model_data()["le_education"]
+
+# =========================================================
+# 🔥 SMART EDUCATION NORMALIZATION
 # =========================================================
 def clean_education(edu_str):
     if not isinstance(edu_str, str):
         return None
     
-    # Normalize encoding and characters
+    # Normalize broken encoding and characters
     text = edu_str.encode('ascii', 'ignore').decode('utf-8') if 'â' in edu_str else edu_str
     text = text.replace('’', "'").replace('â€™', "'").lower().strip()
     
-    # Patterns
+    # Keyword Patterns
     undergrad_patterns = [r'bachelor', r'b\.sc', r'bsc', r'b\.e', r'be', r'b\.tech', r'btech', r'undergraduate']
     postgrad_patterns = [r'master', r'm\.sc', r'msc', r'm\.e', r'me', r'm\.tech', r'mtech', 
                          r'mba', r'phd', r'doctoral', r'doctorate', r'professional degree', r'postgraduate']
@@ -56,11 +69,12 @@ def preprocess_input(country: str, education: str, experience):
     le_country = model_data["le_country"]
     le_education = model_data["le_education"]
 
+    # Normalize education input
     norm_education = clean_education(education)
     
-    # If None, the row is invalid
-    if norm_education is None:
-        raise ValueError("Invalid education level")
+    # Validation: norm_education is None if invalid
+    if norm_education not in ["Undergraduate", "Postgraduate"]:
+        raise ValueError(f"Invalid education level: {education}")
 
     try:
         country_enc = le_country.transform([country])[0]
