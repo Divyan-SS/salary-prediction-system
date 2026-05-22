@@ -1,3 +1,4 @@
+# backend/app/routes/predict.py
 from fastapi import APIRouter, HTTPException
 from typing import Dict
 import logging
@@ -17,7 +18,9 @@ from app.services.currency_service import (
 # =========================================================
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["Prediction"])
+# 🌟 FIXING THE DOUBLE ROUTE SUFFIX BUG
+# Removed the duplicate prefix="/api" configuration parameter to ensure endpoints resolve on /api/predict
+router = APIRouter(tags=["Prediction"])
 
 
 # =========================================================

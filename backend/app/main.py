@@ -1,64 +1,86 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# backend/app/routes/predict.py
+from fastapi import APIRouter, HTTPException
+from typing import Dict
+import logging
 
-from app.routes import predict, upload, analytics, health
+from app.schemas.salary_schema import PredictionRequest, PredictionResponse
+from app.schemas.currency_schema import ConvertedSalaryResponse
 
-import traceback
-
-# =========================================================
-# 🚀 APP INIT
-# =========================================================
-app = FastAPI(
-    title="Salary Prediction API",
-    version="1.0.0"
+from app.ml.predict_salary import predict_salary
+from app.services.currency_service import (
+    convert_currency,
+    get_country_currency,
+    get_supported_currencies
 )
 
 # =========================================================
-# 🌐 CORS CONFIG (FRONTEND SUPPORT)
+# LOGGING
 # =========================================================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://your-frontend-domain.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+logger = logging.getLogger(__name__)
+
+# 🌟 FIXING THE DOUBLE ROUTE SUFFIX BUG
+# Removed the duplicate prefix="/api" configuration parameter to ensure endpoints resolve on /api/predict
+router = APIRouter(tags=["Prediction"])
+
 
 # =========================================================
-# 🔌 ROUTES
+# 🔮 PREDICTION ENDPOINT
 # =========================================================
-app.include_router(predict.router, prefix="/api")
-app.include_router(upload.router, prefix="/api")
-app.include_router(analytics.router, prefix="/api")
-app.include_router(health.router, prefix="/api")
-
-# =========================================================
-# 🏠 ROOT ENDPOINT
-# =========================================================
-@app.get("/")
-def root():
-    return {
-        "message": "Salary Prediction API is running"
-    }
-
-# =========================================================
-# ❤️ HEALTH CHECK (RENDER FRIENDLY)
-# =========================================================
-@app.get("/healthz")
-def health_check():
-    return {"status": "ok"}
-
-# =========================================================
-# 🛡️ GLOBAL ERROR DEBUG (IMPORTANT FOR RENDER)
-# =========================================================
-@app.on_event("startup")
-def startup_event():
+@router.post("/predict", response_model=PredictionResponse)
+async def predict_salary_endpoint(request: PredictionRequest):
     try:
-        print("🚀 Server starting successfully...")
-    except Exception:
-        print("❌ Startup error:")
-        print(traceback.format_exc())
+        logger.info(
+            f"Prediction request: country={request.country}, "
+            f"education={request.education}, experience={request.experience}"
+        )
+
+        salary_usd = predict_salary(
+            country=request.country,
+            education=request.education,
+            experience=request.experience
+        )
+
+        target_currency = get_country_currency(request.country)
+        converted_salary = await convert_currency(salary_usd, target_currency)
+
+        return PredictionResponse(
+            predicted_salary=round(converted_salary, 2),
+            predicted_salary_usd=round(salary_usd, 2),
+            currency=target_currency
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Prediction failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================================
+# 💱 CONVERT SALARY
+# =========================================================
+@router.post("/convert-salary", response_model=ConvertedSalaryResponse)
+async def convert_salary_endpoint(original_salary_usd: float, target_currency: str):
+    try:
+        converted_salary = await convert_currency(original_salary_usd, target_currency)
+
+        return ConvertedSalaryResponse(
+            original_salary_usd=original_salary_usd,
+            converted_salary=round(converted_salary, 2),
+            original_currency="USD",
+            target_currency=target_currency
+        )
+
+    except Exception as e:
+        logger.error(f"Currency conversion failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================================
+# 🌍 CURRENCIES
+# =========================================================
+@router.get("/currencies", response_model=Dict[str, str])
+async def get_currencies():
+    return get_supported_currencies()
