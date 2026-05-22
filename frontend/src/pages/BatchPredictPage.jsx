@@ -1,4 +1,4 @@
-//frontend/src/pages/BatchPredictPage.jsx
+// frontend/src/pages/BatchPredictPage.jsx
 import { useEffect, useRef, useState } from 'react';
 import CsvUploader from '../components/CsvUploader';
 import { uploadCSV } from '../services/api';
@@ -208,7 +208,7 @@ function NeuralCanvas() {
 
 export default function BatchPredictPage() {
   const [file, setFile] = useState(null);
-  const [predictions, setPredictions] = useState(null);
+  const [batchData, setBatchData] = useState(null); // Unified object tracking backend output
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -232,7 +232,7 @@ export default function BatchPredictPage() {
       setError(null);
       
       const response = await uploadCSV(formData);
-      setPredictions(response.data);
+      setBatchData(response.data);
     } catch (err) {
       console.error("Batch deployment routing error:", err.response?.data || err.message);
       const errorMsg = err.response?.data?.detail || "Network error: Connection to prediction service failed.";
@@ -243,14 +243,14 @@ export default function BatchPredictPage() {
   };
 
   const downloadResultsCSV = () => {
-    if (!predictions || predictions.length === 0) return;
+    if (!batchData || !batchData.results || batchData.results.length === 0) return;
 
     const headers = ["Country", "EdLevel", "YearsCodePro", "PredictedSalaryUSD\n"];
-    const rows = predictions.map(row => {
-      const country = row.Country || row.country || "";
-      const education = row.EdLevel || row.education || "";
-      const experience = row.YearsCodePro || row.experience || "0";
-      const salary = row.PredictedSalary || row.predicted_salary || "0";
+    const rows = batchData.results.map(row => {
+      const country = row.Country || "Unknown";
+      const education = row.EdLevel || "Unspecified";
+      const experience = row.YearsCodePro || "0";
+      const salary = row.Predicted_Salary_USD || 0;
       return `"${country}","${education}",${experience},${parseFloat(salary).toFixed(2)}\n`;
     });
 
@@ -262,6 +262,7 @@ export default function BatchPredictPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -332,12 +333,17 @@ export default function BatchPredictPage() {
             </div>
           )}
 
-          {predictions && (
+          {batchData && (
             <div className="animate-float glass-panel mt-8 rounded-3xl p-6 md:p-8 w-full border border-white/10 text-white">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight">Processed Predictions Matrix</h2>
-                  <p className="text-xs sm:text-sm text-slate-400">Total metrics counted: {predictions.length} profiles calculated.</p>
+                  <div className="flex flex-wrap gap-3 mt-1.5 text-xs sm:text-sm">
+                    <span className="text-emerald-400 font-medium">✅ Successful: {batchData.successful_predictions} / {batchData.total_rows}</span>
+                    {batchData.rows_dropped_due_to_education > 0 && (
+                      <span className="text-yellow-400 font-medium">⚠️ {batchData.rows_dropped_due_to_education} Skipped Rows (Invalid EdLevel)</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -347,6 +353,18 @@ export default function BatchPredictPage() {
                   📥 Export Completed CSV
                 </button>
               </div>
+
+              {/* Individual Row Validation Messages Area */}
+              {batchData.errors && batchData.errors.length > 0 && (
+                <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
+                  <p className="text-sm font-semibold text-red-400 mb-2">Skipped Matrix Records</p>
+                  <ul className="text-xs text-red-300 list-disc list-inside max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                    {batchData.errors.map((err, i) => (
+                      <li key={i}>Row {err.row}: {err.country} — {err.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px]">
                 <table className="w-full text-left border-collapse text-sm">
@@ -359,13 +377,19 @@ export default function BatchPredictPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 font-medium text-slate-200">
-                    {predictions.map((row, index) => (
+                    {batchData.results && batchData.results.map((row, index) => (
                       <tr key={index} className="hover:bg-white/[0.02] transition">
-                        <td className="p-4">{row.Country || row.country || "Unknown"}</td>
-                        <td className="p-4 text-xs"><span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">{row.EdLevel || row.education || "Unspecified"}</span></td>
-                        <td className="p-4">{row.YearsCodePro || row.experience || "0"} Years</td>
+                        <td className="p-4">{row.Country || "Unknown"}</td>
+                        <td className="p-4 text-xs">
+                          <span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">
+                            {row.EdLevel || "Unspecified"}
+                          </span>
+                        </td>
+                        <td className="p-4">{row.YearsCodePro || "0"} Years</td>
                         <td className="p-4 font-bold text-sky-400 text-base">
-                          ${parseFloat(row.PredictedSalary || row.predicted_salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {row.Predicted_Salary_USD 
+                            ? `$${parseFloat(row.Predicted_Salary_USD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                            : '❌ Error'}
                         </td>
                       </tr>
                     ))}

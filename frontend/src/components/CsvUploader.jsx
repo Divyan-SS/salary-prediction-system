@@ -1,4 +1,4 @@
-﻿// CsvUploader.jsx
+﻿// frontend/src/components/CsvUploader.jsx
 import { useState, useRef, useEffect } from 'react';
 import { uploadCSV, convertSalary, getSupportedCurrencies } from '../services/api';
 import toast from 'react-hot-toast';
@@ -148,7 +148,6 @@ export default function CsvUploader({ onPredictionComplete }) {
     if (onPredictionComplete) onPredictionComplete([]);
   };
 
-  // Safe manual clear pipeline resetting bound element state metrics
   const clearSelectedFile = (e) => {
     if (e) e.preventDefault();
     setFile(null);
@@ -198,23 +197,23 @@ export default function CsvUploader({ onPredictionComplete }) {
   const downloadSampleCSV = () => {
     const sampleData = [
       ['Country', 'EdLevel', 'YearsCodePro'],
-      ['United States', 'Master’s degree', '8'],
-      ['India', 'Bachelor’s degree', '3'],
-      ['United Kingdom', 'Professional degree', '12'],
-      ['Germany', 'Master’s degree', '5'],
-      ['Canada', 'Bachelor’s degree', '2'],
-      ['France', 'Other doctoral', '15'],
-      ['Australia', 'Master’s degree', '10'],
-      ['Netherlands', 'Bachelor’s degree', '4'],
+      ['United States', 'B.Sc Computer Science', '8'],
+      ['India', 'B.Tech Information Technology', '3'],
+      ['United Kingdom', 'M.Sc Artificial Intelligence', '12'],
+      ['Germany', 'MBA Finance', '5'],
+      ['Canada', 'PhD Data Science', '2'],
+      ['France', 'M.Tech AI', '15'],
+      ['Australia', 'Postgraduate', '10'],
+      ['Netherlands', 'Undergraduate', '4'],
       ['Poland', 'Master’s degree', '7'],
       ['Sweden', 'Bachelor’s degree', '1'],
-      ['Brazil', 'Master’s degree', '6'],
-      ['Italy', 'Bachelor’s degree', '0.5'],
-      ['Spain', 'Master’s degree', '50'],
-      ['Russian Federation', 'Bachelor’s degree', '20']
+      ['Brazil', 'MBA', '6'],
+      ['Italy', 'fvbdbv', '0.5'],
+      ['Spain', 'Professional degree', '50'],
+      ['Russian Federation', 'Other doctoral', '20']
     ];
     const csvContent = sampleData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -348,7 +347,6 @@ export default function CsvUploader({ onPredictionComplete }) {
           </div>
 
           <div className="p-6 space-y-5">
-            {/* Control Layout Array Trigger Buttons */}
             <div className="flex flex-wrap gap-3">
               <label className="bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-800/60 rounded-xl px-4 py-2 transition flex items-center gap-2 shadow-sm text-gray-200">
                 <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -402,7 +400,6 @@ export default function CsvUploader({ onPredictionComplete }) {
               </button>
             </div>
 
-            {/* Premium Attachment Preview Card Display Space */}
             {file && (
               <div className="w-full max-w-xl bg-zinc-950/40 border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4 animate-card-slide backdrop-blur-md">
                 <div className="flex items-center gap-3 min-w-0">
@@ -450,7 +447,6 @@ export default function CsvUploader({ onPredictionComplete }) {
         {/* Results Section */}
         {result && (
           <div className="space-y-6">
-            {/* Original Predictions Container */}
             <div className="glass-panel-dark rounded-[40px] shadow-sm transition-all duration-300 overflow-hidden">
               <div className="p-6 border-b border-zinc-800/60 bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -467,7 +463,6 @@ export default function CsvUploader({ onPredictionComplete }) {
                   </div>
                 </div>
                 
-                {/* Header Action Button A: Original CSV Exporter */}
                 <button
                   onClick={() => downloadResultsCSV(result.results, false)}
                   className="sm:self-center flex items-center gap-1.5 bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-800/60 text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-sm hover:scale-105"
@@ -491,7 +486,7 @@ export default function CsvUploader({ onPredictionComplete }) {
                   )}
                 </div>
 
-                {result.errors.length > 0 && (
+                {result.errors && result.errors.length > 0 && (
                   <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
                     <p className="text-sm font-semibold text-red-400 mb-2">Errors</p>
                     <ul className="text-sm text-red-300 list-disc list-inside max-h-32 overflow-y-auto">
@@ -514,14 +509,14 @@ export default function CsvUploader({ onPredictionComplete }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40 bg-[#141416]/50">
-                      {result?.results?.map((row, i) => (
+                      {result.results && result.results.map((row, i) => (
                         <tr key={i} className="hover:bg-zinc-800/30 transition">
                           <td className="p-3">{row.Country}</td>
                           <td className="p-3">{row.EdLevel}</td>
                           <td className="p-3">{row.YearsCodePro}</td>
                           <td className="p-3 font-mono text-emerald-400">
-                            {typeof row.Predicted_Salary_USD === 'number'
-                              ? `$${row.Predicted_Salary_USD.toLocaleString()}`
+                            {row.Predicted_Salary_USD ?? row.PredictedSalary
+                              ? `$${(row.Predicted_Salary_USD ?? row.PredictedSalary).toLocaleString()}`
                               : '❌ Error'}
                           </td>
                         </tr>
@@ -623,7 +618,6 @@ export default function CsvUploader({ onPredictionComplete }) {
                     </div>
                   </div>
 
-                  {/* Header Action Button B: Converted CSV Exporter */}
                   <button
                     onClick={() => downloadResultsCSV(convertedResults, true)}
                     className="sm:self-center flex items-center gap-1.5 bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-800/60 text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-sm hover:scale-105"
@@ -648,23 +642,26 @@ export default function CsvUploader({ onPredictionComplete }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-800/40 bg-[#141416]/50">
-                        {convertedResults.map((row, i) => (
-                          <tr key={i} className="hover:bg-zinc-800/30 transition">
-                            <td className="p-3">{row.Country}</td>
-                            <td className="p-3">{row.EdLevel}</td>
-                            <td className="p-3">{row.YearsCodePro}</td>
-                            <td className="p-3 font-mono text-gray-400">
-                              {typeof row.Predicted_Salary_USD === 'number'
-                                ? `$${row.Predicted_Salary_USD.toLocaleString()}`
-                                : '❌ Error'}
-                            </td>
-                            <td className="p-3 font-mono text-sky-400">
-                              {typeof row.Converted_Salary === 'number'
-                                ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
-                                : '—'}
-                            </td>
-                          </tr>
-                        ))}
+                        {convertedResults.map((row, i) => {
+                          const baseSalary = row.Predicted_Salary_USD ?? row.PredictedSalary;
+                          return (
+                            <tr key={i} className="hover:bg-zinc-800/30 transition">
+                              <td className="p-3">{row.Country}</td>
+                              <td className="p-3">{row.EdLevel}</td>
+                              <td className="p-3">{row.YearsCodePro}</td>
+                              <td className="p-3 font-mono text-gray-400">
+                                {typeof baseSalary === 'number'
+                                  ? `$${baseSalary.toLocaleString()}`
+                                  : '❌ Error'}
+                              </td>
+                              <td className="p-3 font-mono text-sky-400">
+                                {typeof row.Converted_Salary === 'number'
+                                  ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
+                                  : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
