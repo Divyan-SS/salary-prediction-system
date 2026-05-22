@@ -73,3 +73,28 @@ def preprocess_input(country: str, education: str, experience):
         raise ValueError("Experience must be 0–50")
 
     return np.array([[country_enc, edu_enc, experience]], dtype=float)
+
+
+# =========================================================
+# 🧹 BULK CSV UPLOAD CLEANING CLEANERS (ADDITIONS)
+# =========================================================
+def clean_experience(x):
+    """Converts raw experience text data to standard floats"""
+    if x == 'More than 50 years':
+        return 50
+    if x == 'Less than 1 year':
+        return 0.5
+    try:
+        return float(x)
+    except:
+        return 0.0
+
+def clean_education(x):
+    """Normalizes raw survey categories into standard strings"""
+    if not isinstance(x, str):
+        return "Undergraduate"
+    if "Bachelor's degree" in x or "Professional degree" in x:
+        return "Undergraduate"
+    if "Master's degree" in x or "Other doctoral" in x:
+        return "Postgraduate"
+    return "Undergraduate"
