@@ -1,4 +1,4 @@
-// ExplorePage.jsx
+//frontend/src/pages/ExplorePage.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchFilteredAnalytics, fetchAnalytics } from '../services/api';
 import { motion } from 'framer-motion';
@@ -238,14 +238,14 @@ const chartSections = [
 ];
 
 const chartColors = [
-  '#3b82f6', // Brighter blue
+  '#3b82f6', 
   '#10b981', 
-  '#fbbf24', // Brighter amber
-  '#a78bfa', // Brighter purple
-  '#2dd4bf', // Brighter teal
-  '#f472b6', // Brighter pink
-  '#fb923c', // Brighter orange
-  '#38bdf8', // Brighter sky
+  '#fbbf24', 
+  '#a78bfa', 
+  '#2dd4bf', 
+  '#f472b6', 
+  '#fb923c', 
+  '#38bdf8', 
 ];
 
 const formatCurrency = (value) =>
@@ -296,7 +296,6 @@ export default function ExplorePage() {
   const [modalChartId, setModalChartId] = useState(null);
   const abortControllerRef = useRef(null);
 
-  // Reusable configuration maps for Axis labels, ticks, and legends
   const axisLabelConfig = { fill: '#f8fafc', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' };
   const gridConfig = { stroke: '#475569', strokeDasharray: '4 4', opacity: 0.6 };
   const tooltipBaseStyle = {
@@ -305,12 +304,12 @@ export default function ExplorePage() {
     border: '1px solid #38bdf8',
     padding: '12px',
     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-    cursor: 'none' // CRITICAL JSX FIX: Prevent native cursor on tooltip hover
+    cursor: 'none' 
   };
   const tooltipItemStyle = { color: '#f8fafc', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-body)' };
   const tooltipLabelStyle = { color: '#38bdf8', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' };
 
-  // Initial load
+  // Initial load configuration
   useEffect(() => {
     const loadInitial = async () => {
       try {
@@ -318,11 +317,13 @@ export default function ExplorePage() {
         setError('');
         const res = await fetchAnalytics();
         const data = res?.data || {};
-        const countries = data.mean_salary_by_country?.map((item) => item.category) || [];
+        
+        const countries = data.mean_salary_by_country?.map((item) => item.category || item.country) || [];
         const educationLevels = (data.education_salary_distribution || data.education_salary_comparison || [])
-          .map((item) => item.category || item.EdLevel)
+          .map((item) => item.category || item.EdLevel || item.education)
           .filter(Boolean);
         const uniqueEducation = Array.from(new Set(educationLevels)).sort();
+        
         setAllCountries(countries);
         setSelectedCountries(countries);
         setAllEducationLevels(uniqueEducation);
@@ -338,7 +339,7 @@ export default function ExplorePage() {
     loadInitial();
   }, []);
 
-  // Filtered fetch (with cancellation)
+  // Filtered fetch execution
   useEffect(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -365,20 +366,16 @@ export default function ExplorePage() {
       try {
         setLoading(true);
         setError('');
-        const res = await fetchFilteredAnalytics(
-          selectedCountries,
-          experienceRange[0],
-          experienceRange[1],
-          selectedEducationLevels,
-          { signal: controller.signal }
-        );
+        
+        // Passing filter states matching backend filter targets
+        const res = await fetchFilteredAnalytics(selectedCountries);
         if (res?.data) {
           setAnalytics(res.data);
         }
       } catch (err) {
         if (err.name === 'AbortError') return;
         console.error(err);
-        setError('Failed to load analytics. Please check your filters and press F5 to try again.');
+        setError('Failed to load analytics. Please check your filters.');
       } finally {
         setLoading(false);
       }
@@ -432,28 +429,66 @@ export default function ExplorePage() {
   const lowestSalary = hasValidData ? analytics?.summary_stats?.lowest_salary ?? 0 : 0;
   const totalRecords = hasValidData ? analytics?.summary_stats?.total_records ?? 0 : 0;
 
-  const educationPieData = (analytics?.education_salary_distribution || []).filter((item) =>
-    selectedEducationLevels.includes(item?.category)
-  );
-  const countryDistribution = analytics?.country_distribution || [];
-  const experiencePoints = analytics?.experience_salary_points || [];
-  const filteredExperiencePoints = experiencePoints.filter(
-    (item) => item?.experience >= experienceRange[0] && item?.experience <= experienceRange[1]
-  );
-  const topPayingCountries = (analytics?.mean_salary_by_country || [])
-    .slice()
-    .sort((a, b) => (b?.mean_salary ?? 0) - (a?.mean_salary ?? 0))
-    .slice(0, 8);
+  const educationPieData = useMemo(() => {
+    const rawData = analytics?.education_salary_distribution || analytics?.education_salary_comparison || [];
+    return rawData
+      .map(item => ({
+        ...item,
+        category: item.category || item.EdLevel || item.education,
+        mean_salary: item.mean_salary || item.salary || 0
+      }))
+      .filter((item) => selectedEducationLevels.includes(item?.category));
+  }, [analytics, selectedEducationLevels]);
+
+  const countryDistribution = useMemo(() => {
+    return (analytics?.country_distribution || []).map(item => ({
+      ...item,
+      country: item.country || item.category,
+      count: item.count || item.value || 0
+    }));
+  }, [analytics]);
+
+  const experiencePoints = useMemo(() => {
+    return (analytics?.experience_salary_points || []).map(item => ({
+      ...item,
+      experience: item.experience != null ? item.experience : item.category,
+      mean_salary: item.mean_salary || item.salary || 0
+    }));
+  }, [analytics]);
+
+  const filteredExperiencePoints = useMemo(() => {
+    return experiencePoints.filter(
+      (item) => item?.experience >= experienceRange[0] && item?.experience <= experienceRange[1]
+    );
+  }, [experiencePoints, experienceRange]);
+
+  const topPayingCountries = useMemo(() => {
+    const data = analytics?.mean_salary_by_country || [];
+    return data
+      .map(item => ({
+        ...item,
+        category: item.category || item.country || "Unknown",
+        mean_salary: item.mean_salary || item.salary || 0
+      }))
+      .slice()
+      .sort((a, b) => (b?.mean_salary ?? 0) - (a?.mean_salary ?? 0))
+      .slice(0, 8);
+  }, [analytics]);
 
   const stackedEducationData = useMemo(() => {
     if (!analytics?.education_salary_by_country) return [];
     const grouped = {};
     analytics.education_salary_by_country.forEach((item) => {
-      if (!item || !selectedEducationLevels.includes(item.education)) return;
-      if (!grouped[item.country]) {
-        grouped[item.country] = { country: item.country };
+      if (!item) return;
+      const eduLevel = item.education || item.EdLevel;
+      const ctry = item.country || item.category;
+      const salary = item.mean_salary || item.salary || 0;
+      
+      if (!selectedEducationLevels.includes(eduLevel)) return;
+      if (!grouped[ctry]) {
+        grouped[ctry] = { country: ctry };
       }
-      grouped[item.country][item.education] = item.mean_salary;
+      grouped[ctry][eduLevel] = salary;
     });
     return Object.values(grouped);
   }, [analytics, selectedEducationLevels]);
@@ -462,9 +497,13 @@ export default function ExplorePage() {
     const commonProps = { width: '100%', height: isModal ? '100%' : 320 };
     switch (chartId) {
       case 'meanSalaryByCountry':
-        return analytics?.mean_salary_by_country?.length ? (
+        const barData = analytics?.mean_salary_by_country?.map(item => ({
+          category: item.category || item.country,
+          mean_salary: item.mean_salary || item.salary
+        })) || [];
+        return barData.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={analytics.mean_salary_by_country}>
+            <BarChart data={barData}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="category" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -530,8 +569,8 @@ export default function ExplorePage() {
           <ResponsiveContainer {...commonProps}>
             <BarChart data={topPayingCountries} layout="vertical">
               <CartesianGrid {...gridConfig} />
-              <XAxis type="number" tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
-              <YAxis dataKey="category" type="category" width={110} tick={axisLabelConfig} />
+              <XAxis type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} />
+              <YAxis dataKey="category" type="category" width={110} tick={axisLabelConfig} stroke="#f8fafc" />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Bar dataKey="mean_salary" fill="#fb923c" radius={[0, 8, 8, 0]} maxBarSize={30} />
             </BarChart>
@@ -557,8 +596,8 @@ export default function ExplorePage() {
           <ResponsiveContainer {...commonProps}>
             <ScatterChart>
               <CartesianGrid {...gridConfig} />
-              <XAxis dataKey="experience" type="number" tick={axisLabelConfig} name="Experience" unit="yrs" />
-              <YAxis dataKey="mean_salary" type="number" tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} name="Salary" />
+              <XAxis dataKey="experience" type="number" tick={axisLabelConfig} stroke="#f8fafc" name="Experience" unit="yrs" />
+              <YAxis dataKey="mean_salary" type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} name="Salary" />
               <Tooltip cursor={{ strokeDasharray: '3 3', stroke: '#38bdf8' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Scatter data={filteredExperiencePoints} fill="#2dd4bf" line={false} shape="circle" r={6} />
             </ScatterChart>
@@ -599,12 +638,10 @@ export default function ExplorePage() {
         }
 
         @media (hover:hover) and (pointer:fine) {
-          /* Force hide default cursor globally */
           *, html, body, a, button, select, input, label {
             cursor: none !important;
           }
           
-          /* CRITICAL CSS FIX: Override Recharts inline pointer/crosshair styles */
           .recharts-wrapper,
           .recharts-surface,
           .recharts-wrapper *,
@@ -648,13 +685,10 @@ export default function ExplorePage() {
         }
       `}</style>
 
-      {/* Deep Cyber Navy Ambient Background Framework */}
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
-        
         <NeuralCanvas />
 
         <div className="w-full max-w-7xl mx-auto relative z-10">
-          {/* Header */}
           <div className="text-center mb-10">
             <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-5 py-2 border border-sky-500/20 shadow-sm mb-6">
               <span className="relative flex h-2.5 w-2.5">
@@ -675,12 +709,11 @@ export default function ExplorePage() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-            {/* Sidebar (filters) */}
+            {/* Filter Controls Container Column */}
             <section className="space-y-6">
               <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover">
                 <h2 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters</h2>
 
-                {/* Countries */}
                 <div className="mt-6">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                     <h3 className="text-sm font-bold text-slate-200">Countries</h3>
@@ -703,7 +736,6 @@ export default function ExplorePage() {
                   </div>
                 </div>
 
-                {/* Education */}
                 <div className="mt-6">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                     <h3 className="text-sm font-bold text-slate-200">Education</h3>
@@ -726,7 +758,6 @@ export default function ExplorePage() {
                   </div>
                 </div>
 
-                {/* Experience */}
                 <div className="mt-6 border border-zinc-800/60 rounded-3xl p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
                   <div className="flex justify-between items-center">
                     <h3 className="text-sm font-bold text-slate-200">Experience Range</h3>
@@ -743,7 +774,6 @@ export default function ExplorePage() {
                 </div>
               </div>
 
-              {/* Chart Visibility */}
               <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover select-none">
                 <h2 className="text-lg font-bold text-white mb-4 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Chart Visibility</h2>
                 <div className="space-y-3">
@@ -757,17 +787,10 @@ export default function ExplorePage() {
               </div>
             </section>
 
-            {/* Main Content */}
+            {/* Dashboard Graphics Visualization Stream */}
             <section className="space-y-6">
-              {/* Glowing Metric Summary Cards Layer */}
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                {/* Card 1: Average Salary */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-                  className="relative flex flex-col justify-start items-start w-full group mx-auto"
-                >
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(45px)' }} />
                   <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
                     <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
@@ -777,13 +800,7 @@ export default function ExplorePage() {
                   </div>
                 </motion.div>
 
-                {/* Card 2: Highest Salary */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                  className="relative flex flex-col justify-start items-start w-full group mx-auto"
-                >
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(45px)' }} />
                   <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
                     <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
@@ -793,13 +810,7 @@ export default function ExplorePage() {
                   </div>
                 </motion.div>
 
-                {/* Card 3: Lowest Salary */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
-                  className="relative flex flex-col justify-start items-start w-full group mx-auto"
-                >
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(45px)' }} />
                   <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
                     <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
@@ -809,13 +820,7 @@ export default function ExplorePage() {
                   </div>
                 </motion.div>
 
-                {/* Card 4: Total Records */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
-                  className="relative flex flex-col justify-start items-start w-full group mx-auto"
-                >
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%)', filter: 'blur(45px)' }} />
                   <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%) border-box' }}>
                     <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
@@ -826,14 +831,12 @@ export default function ExplorePage() {
                 </motion.div>
               </div>
 
-              {/* No country selected */}
               {showNoCountryMessage && (
                 <div className="rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-16 text-center animate-float">
                   <p className="text-2xl font-bold text-white">Please click F5 or refresh the page.</p>
                 </div>
               )}
 
-              {/* No education selected */}
               {showEmptyEducationMessage && !showNoCountryMessage && (
                 <div className="rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-16 text-center animate-float">
                   <p className="text-2xl font-bold text-white">Select at least one education level</p>
@@ -841,7 +844,6 @@ export default function ExplorePage() {
                 </div>
               )}
 
-              {/* Loading */}
               {loading && !showNoCountryMessage && !showEmptyEducationMessage && (
                 <div className="glass-panel rounded-[40px] p-16 text-center">
                   <div className="animate-spin h-10 w-10 border-b-2 border-sky-500 rounded-full mx-auto"></div>
@@ -849,14 +851,12 @@ export default function ExplorePage() {
                 </div>
               )}
 
-              {/* Error message */}
               {error && !loading && !showNoCountryMessage && !showEmptyEducationMessage && (
                 <div className="bg-red-950/30 border border-red-900/40 text-red-400 rounded-2xl p-4 backdrop-blur-sm">
                   {error}
                 </div>
               )}
 
-              {/* Charts with Glowing Gradient Border Containers Layer */}
               {!loading && !showNoCountryMessage && !showEmptyEducationMessage && !error && analytics && (
                 <div className="grid gap-6 xl:grid-cols-2">
                   {chartSections.map((section, idx) => {
@@ -889,7 +889,7 @@ export default function ExplorePage() {
             </section>
           </div>
 
-          {/* Modal Overlay Layer */}
+          {/* Modal Focus Overlay */}
           {modalChartId !== null && (
             <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-md transition-all duration-300" onClick={closeModal}>
               <div className="relative bg-zinc-950/95 backdrop-blur-lg rounded-[40px] shadow-2xl w-[90vw] h-[85vh] p-6 flex flex-col border border-zinc-800/60" onClick={(e) => e.stopPropagation()}>

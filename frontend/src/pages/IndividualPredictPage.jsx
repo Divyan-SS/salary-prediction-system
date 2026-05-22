@@ -1,4 +1,4 @@
-// IndividualPredictPage.jsx
+//frontend/src/pages/IndividualPredictPage.jsx
 import { useEffect, useRef } from 'react';
 import PredictionForm from '../components/PredictionForm';
 

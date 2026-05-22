@@ -1,7 +1,8 @@
-// HomePage.jsx
+//frontend/src/pages/HomePage.jsx
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { checkHealth } from '../services/api';
 
 // ─── Zoom-Adaptive Deep Navy Neural Matrix Background ────────
 function NeuralCanvas() {
@@ -208,6 +209,19 @@ function NeuralCanvas() {
 
 // ─── Main Content Component ──────────────────────────────────────────────────
 export default function HomePage() {
+  // ⚡ Silent startup ping to spin up Render's Free Tier early
+  useEffect(() => {
+    const triggerHandshake = async () => {
+      try {
+        await checkHealth();
+        console.log("Core API Handshake Completed: Engine fully live.");
+      } catch (err) {
+        console.log("Engine waking up from standby cluster initialization state...", err.message);
+      }
+    };
+    triggerHandshake();
+  }, []);
+
   return (
     <>
       <style>{`

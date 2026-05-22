@@ -1,6 +1,7 @@
-// BatchPredictPage.jsx
-import { useEffect, useRef } from 'react';
+//frontend/src/pages/BatchPredictPage.jsx
+import { useEffect, useRef, useState } from 'react';
 import CsvUploader from '../components/CsvUploader';
+import { uploadCSV } from '../services/api';
 
 // ─── Zoom-Adaptive Deep Navy Neural Matrix Background ────────
 function NeuralCanvas() {
@@ -206,6 +207,63 @@ function NeuralCanvas() {
 }
 
 export default function BatchPredictPage() {
+  const [file, setFile] = useState(null);
+  const [predictions, setPredictions] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleFileChange = (selectedFile) => {
+    setFile(selectedFile);
+    setError(null);
+  };
+
+  const handleUploadSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!file) {
+      setError("Please select a valid CSV file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await uploadCSV(formData);
+      setPredictions(response.data);
+    } catch (err) {
+      console.error("Batch deployment routing error:", err.response?.data || err.message);
+      const errorMsg = err.response?.data?.detail || "Network error: Connection to prediction service failed.";
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadResultsCSV = () => {
+    if (!predictions || predictions.length === 0) return;
+
+    const headers = ["Country", "EdLevel", "YearsCodePro", "PredictedSalaryUSD\n"];
+    const rows = predictions.map(row => {
+      const country = row.Country || row.country || "";
+      const education = row.EdLevel || row.education || "";
+      const experience = row.YearsCodePro || row.experience || "0";
+      const salary = row.PredictedSalary || row.predicted_salary || "0";
+      return `"${country}","${education}",${experience},${parseFloat(salary).toFixed(2)}\n`;
+    });
+
+    const blob = new Blob([headers.join(','), ...rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `salary_predictions_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <style>{`
@@ -227,6 +285,21 @@ export default function BatchPredictPage() {
           border: 1px solid rgba(255, 255, 255, 0.06);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
         }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
       `}</style>
 
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
@@ -243,10 +316,64 @@ export default function BatchPredictPage() {
           <div className="relative flex flex-col w-full group mx-auto animate-float-delay-2">
             <div className="self-stretch rounded-[40px] z-10 overflow-hidden" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #7DD3FC 50%, #06B6D4 100%) border-box' }}>
               <div className="p-6 md:p-8 backdrop-blur-md">
-                <CsvUploader />
+                <CsvUploader 
+                  onFileSelect={handleFileChange}
+                  onUploadSubmit={handleUploadSubmit}
+                  loading={loading}
+                />
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="animate-float glass-panel mt-6 rounded-2xl border-red-500/20 bg-red-500/5 p-4 text-red-400 text-sm flex items-center gap-3 max-w-4xl w-full mx-auto">
+              <span>⚠️</span>
+              <p><strong>Upload Failed:</strong> {error}</p>
+            </div>
+          )}
+
+          {predictions && (
+            <div className="animate-float glass-panel mt-8 rounded-3xl p-6 md:p-8 w-full border border-white/10 text-white">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">Processed Predictions Matrix</h2>
+                  <p className="text-xs sm:text-sm text-slate-400">Total metrics counted: {predictions.length} profiles calculated.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadResultsCSV}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-500/20 active:scale-95"
+                >
+                  📥 Export Completed CSV
+                </button>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px]">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/5 text-slate-300 font-semibold sticky top-0 backdrop-blur-md z-10">
+                      <th className="p-4">Country</th>
+                      <th className="p-4">Education Level</th>
+                      <th className="p-4">Experience</th>
+                      <th className="p-4 text-sky-400">Predicted Salary (USD)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 font-medium text-slate-200">
+                    {predictions.map((row, index) => (
+                      <tr key={index} className="hover:bg-white/[0.02] transition">
+                        <td className="p-4">{row.Country || row.country || "Unknown"}</td>
+                        <td className="p-4 text-xs"><span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">{row.EdLevel || row.education || "Unspecified"}</span></td>
+                        <td className="p-4">{row.YearsCodePro || row.experience || "0"} Years</td>
+                        <td className="p-4 font-bold text-sky-400 text-base">
+                          ${parseFloat(row.PredictedSalary || row.predicted_salary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="animate-float-delay-2 mt-12 text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm font-medium">
