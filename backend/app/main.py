@@ -1,91 +1,66 @@
-# backend/app/routes/predict.py
-from fastapi import APIRouter, HTTPException
-from typing import Dict
-import logging
+# backend/app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routes import predict, upload, analytics, health
+import traceback
 
-from app.schemas.salary_schema import PredictionRequest, PredictionResponse
-from app.schemas.currency_schema import ConvertedSalaryResponse
-
-from app.ml.predict_salary import predict_salary
-from app.services.currency_service import (
-    convert_currency,
-    get_country_currency,
-    get_supported_currencies
+# =========================================================
+# 🚀 APP INIT
+# =========================================================
+# This MUST be named exactly "app" in lowercase, globally exposed!
+app = FastAPI(
+    title="Salary Prediction API",
+    version="1.0.0"
 )
 
 # =========================================================
-# LOGGING
+# 🌐 CORS CONFIG (FRONTEND SUPPORT)
 # =========================================================
-logger = logging.getLogger(__name__)
-
-# Unified Router Setup 
-router = APIRouter(tags=["Prediction"])
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://salary-prediction-system-xi.vercel.app",
+        "https://salary-prediction-system-git-main-divyan-s-s-projects.vercel.app",
+        "https://salary-prediction-system-frontend.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # =========================================================
-# 🔮 PREDICTION ENDPOINT
+# 🔌 ROUTES
 # =========================================================
-@router.post("/predict", response_model=PredictionResponse)
-async def predict_salary_endpoint(request: PredictionRequest):
+app.include_router(predict.router, prefix="/api")
+app.include_router(upload.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+app.include_router(health.router, prefix="/api")
+
+# =========================================================
+# 🏠 ROOT ENDPOINT
+# =========================================================
+@app.get("/")
+def root():
+    return {
+        "message": "Salary Prediction API is running"
+    }
+
+# =========================================================
+# ❤️ HEALTH CHECK (RENDER FRIENDLY)
+# =========================================================
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
+
+# =========================================================
+# 🛡️ GLOBAL ERROR DEBUG (IMPORTANT FOR RENDER)
+# =========================================================
+@app.on_event("startup")
+def startup_event():
     try:
-        # 🌟 ROBUST STRING CLEANING LAYER:
-        # Standardize curly quotes (’) to match whatever variant your pickle model's LabelEncoder used
-        sanitized_education = request.education.replace("'", "’").strip()
-        sanitized_country = request.country.strip()
-
-        logger.info(
-            f"Prediction request incoming: country={sanitized_country}, "
-            f"education={sanitized_education}, experience={request.experience}"
-        )
-
-        # Forward formatted features to your machine learning model pipeline
-        salary_usd = predict_salary(
-            country=sanitized_country,
-            education=sanitized_education,
-            experience=request.experience
-        )
-
-        target_currency = get_country_currency(sanitized_country)
-        converted_salary = await convert_currency(salary_usd, target_currency)
-
-        return PredictionResponse(
-            predicted_salary=round(converted_salary, 2),
-            predicted_salary_usd=round(salary_usd, 2),
-            currency=target_currency
-        )
-
-    except ValueError as e:
-        logger.error(f"Validation mapping failure: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-    except Exception as e:
-        logger.error(f"Prediction computation failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# =========================================================
-# 💱 CONVERT SALARY
-# =========================================================
-@router.post("/convert-salary", response_model=ConvertedSalaryResponse)
-async def convert_salary_endpoint(original_salary_usd: float, target_currency: str):
-    try:
-        converted_salary = await convert_currency(original_salary_usd, target_currency)
-
-        return ConvertedSalaryResponse(
-            original_salary_usd=original_salary_usd,
-            converted_salary=round(converted_salary, 2),
-            original_currency="USD",
-            target_currency=target_currency
-        )
-
-    except Exception as e:
-        logger.error(f"Currency conversion failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# =========================================================
-# 🌍 CURRENCIES
-# =========================================================
-@router.get("/currencies", response_model=Dict[str, str])
-async def get_currencies():
-    return get_supported_currencies()
+        print("🚀 Server starting successfully...")
+    except Exception:
+        print("❌ Startup error:")
+        print(traceback.format_exc())
