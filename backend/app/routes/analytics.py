@@ -4,16 +4,12 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from pydantic import BaseModel
 from pathlib import Path
-
-# Import cleaning functions
 from app.ml.preprocessing import clean_experience, clean_education
 
-# 🌟 FIX: Removed prefix="/api" here because main.py handles it
 router = APIRouter(tags=["Analytics"])
 
-# 🌟 FIX: Ensure this path points correctly to where your CSV is stored
-# If dataset is in root/dataset/survey_results_public.csv
-DATASET_PATH = Path(__file__).resolve().parent.parent.parent.parent / "dataset" / "survey_results_public.csv"
+# 🌟 ROBUST PATH: Resolves path relative to this file's location
+DATASET_PATH = Path(__file__).resolve().parent.parent.parent / "dataset" / "survey_results_public.csv"
 
 _df_cache = None
 
@@ -23,10 +19,10 @@ def load_and_clean_data():
         return _df_cache
 
     if not DATASET_PATH.exists():
-        raise FileNotFoundError(f"Dataset not found at {DATASET_PATH}")
+        # This will now give you a clear error in Render logs if the path is still wrong
+        raise FileNotFoundError(f"Dataset NOT FOUND at: {DATASET_PATH}")
 
     df = pd.read_csv(DATASET_PATH)
-
     df = df[["Country", "EdLevel", "YearsCodePro", "Employment", "ConvertedComp"]]
     df = df.rename({"ConvertedComp": "Salary"}, axis=1)
     df = df.dropna(subset=["Salary"])
@@ -63,8 +59,7 @@ def build_analytics_payload(df):
         "lowest_salary": round(float(df['Salary'].min()), 2) if not df.empty else 0,
         "total_records": int(len(df)),
     }
-
-    # ... (rest of your build_analytics_payload function remains the same)
+    
     country_salary = df.groupby("Country")["Salary"].mean().sort_values().reset_index()
     mean_by_country = [{"category": row['Country'], "mean_salary": round(row['Salary'], 2)} for _, row in country_salary.iterrows()]
 
