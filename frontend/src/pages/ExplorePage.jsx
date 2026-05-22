@@ -326,8 +326,8 @@ export default function ExplorePage() {
         
         setAllCountries(countries);
         setSelectedCountries(countries);
-        setAllEducationLevels(uniqueEducation);
-        setSelectedEducationLevels(uniqueEducation);
+        setAllEducationLevels(uniqueEducation.length ? uniqueEducation : ["Undergraduate", "Postgraduate"]);
+        setSelectedEducationLevels(uniqueEducation.length ? uniqueEducation : ["Undergraduate", "Postgraduate"]);
         setAnalytics(data);
       } catch (err) {
         console.error(err);
@@ -474,25 +474,34 @@ export default function ExplorePage() {
       .slice(0, 8);
   }, [analytics]);
 
-  // FIX: Fixed item text parsing normalizers tracking precise capitalization strings
+  // FIX: Isolated parsing matrix checking separate keys for Country and EdLevel to avoid overlapping fallback issues
   const stackedEducationData = useMemo(() => {
-    if (!analytics?.education_salary_by_country) return [];
+    const rawList = analytics?.education_salary_by_country || [];
+    if (!rawList.length) return [];
+    
     const grouped = {};
-    analytics.education_salary_by_country.forEach((item) => {
+    rawList.forEach((item) => {
       if (!item) return;
-      const eduLevel = item.education || item.EdLevel || item.category;
-      const ctry = item.country || item.category;
-      const salary = item.mean_salary || item.salary || 0;
       
+      // Separate extraction pipelines for country name vs education domain text
+      const ctry = item.country || item.Country;
+      const eduLevel = item.education || item.EdLevel;
+      const salary = item.mean_salary || item.salary || item.Predicted_Salary_USD || 0;
+      
+      // If either element is blank, we can safely jump out of this specific loop turn
       if (!ctry || !eduLevel) return;
+      
+      // Skip if this row doesn't match selected side filter values
+      if (!selectedCountries.includes(ctry) || !selectedEducationLevels.includes(eduLevel)) return;
       
       if (!grouped[ctry]) {
         grouped[ctry] = { country: ctry };
       }
-      grouped[ctry][eduLevel] = salary;
+      grouped[ctry][eduLevel] = round(float(salary), 2);
     });
+    
     return Object.values(grouped);
-  }, [analytics, selectedEducationLevels]);
+  }, [analytics, selectedCountries, selectedEducationLevels]);
 
   const renderChartContent = (chartId, isModal = false) => {
     const commonProps = { width: '100%', height: isModal ? '100%' : 320 };
@@ -586,7 +595,7 @@ export default function ExplorePage() {
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={12} />
-              {/* FIX: Ensure bars are dynamically generated from current tracked filters safely */}
+              {/* Dynamic bar node generator using values tracked inside sidebar toggle list */}
               {allEducationLevels.filter(lvl => selectedEducationLevels.includes(lvl)).map((level, idx) => (
                 <Bar key={level} dataKey={level} stackId="a" fill={chartColors[idx % chartColors.length]} />
               ))}
