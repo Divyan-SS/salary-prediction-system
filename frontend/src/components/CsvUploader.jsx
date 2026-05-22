@@ -451,7 +451,7 @@ export default function CsvUploader({ onPredictionComplete }) {
         {result && (
           <div className="space-y-6">
             {/* Original Predictions Container */}
-            <div className="glass-panel-dark rounded-[40px] shadow-sm transition-all duration-300 overflow-hidden animate-float-delay">
+            <div className="glass-panel-dark rounded-[40px] shadow-sm transition-all duration-300 overflow-hidden">
               <div className="p-6 border-b border-zinc-800/60 bg-zinc-900/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-sm">

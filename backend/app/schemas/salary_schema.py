@@ -8,8 +8,14 @@ class PredictionRequest(BaseModel):
 
     @validator('education')
     def validate_education(cls, v):
-        if v not in ['Undergraduate', 'Postgraduate']:
-            raise ValueError('Education must be "Undergraduate" or "Postgraduate"')
+        # 🌟 ALLOW BOTH UI SHORT-HAND AND LONG-FORM ML STRINGS
+        allowed_values = [
+            'Undergraduate', 'Postgraduate', 
+            'Bachelor’s degree', 'Master’s degree',
+            "Bachelor's degree", "Master's degree" # Safe fallback for standard quotes
+        ]
+        if v not in allowed_values:
+            raise ValueError('Education must be "Undergraduate", "Postgraduate", or valid degree expressions.')
         return v
 
 class PredictionResponse(BaseModel):

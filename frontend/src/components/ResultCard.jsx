@@ -3,8 +3,8 @@ import { convertSalary, getSupportedCurrencies } from "../services/api";
 
 export default function ResultCard({ prediction }) {
   const [showConverter, setShowConverter] = useState(false);
-  const [targetCurrency, setTargetCurrency] = useState(prediction.currency);
-  const [convertedAmount, setConvertedAmount] = useState(prediction.predicted_salary);
+  const [targetCurrency, setTargetCurrency] = useState(prediction.currency || 'USD');
+  const [convertedAmount, setConvertedAmount] = useState(prediction.predicted_salary || 0);
   const [supportedCurrencies, setSupportedCurrencies] = useState({});
   const [conversionLoading, setConversionLoading] = useState(false);
   const [conversionError, setConversionError] = useState("");
@@ -13,7 +13,7 @@ export default function ResultCard({ prediction }) {
     const fetchCurrencies = async () => {
       try {
         const response = await getSupportedCurrencies();
-        setSupportedCurrencies(response.data);
+        setSupportedCurrencies(response.data || {});
       } catch (err) {
         console.error("Failed to fetch supported currencies:", err);
       }
@@ -22,8 +22,8 @@ export default function ResultCard({ prediction }) {
   }, []);
 
   useEffect(() => {
-    setConvertedAmount(prediction.predicted_salary);
-    setTargetCurrency(prediction.currency);
+    setConvertedAmount(prediction.predicted_salary || 0);
+    setTargetCurrency(prediction.currency || 'USD');
     setShowConverter(false);
   }, [prediction]);
 
@@ -72,6 +72,11 @@ export default function ResultCard({ prediction }) {
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
           border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        select option {
+          background-color: #0d1527;
+          color: #ffffff;
         }
       `}</style>
 
