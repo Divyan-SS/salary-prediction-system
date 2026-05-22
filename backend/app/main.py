@@ -18,8 +18,7 @@ from app.services.currency_service import (
 # =========================================================
 logger = logging.getLogger(__name__)
 
-# 🌟 FIXING THE DOUBLE ROUTE SUFFIX BUG
-# Removed the duplicate prefix="/api" configuration parameter to ensure endpoints resolve on /api/predict
+# Unified Router Setup 
 router = APIRouter(tags=["Prediction"])
 
 
@@ -29,18 +28,24 @@ router = APIRouter(tags=["Prediction"])
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_salary_endpoint(request: PredictionRequest):
     try:
+        # 🌟 ROBUST STRING CLEANING LAYER:
+        # Standardize curly quotes (’) to match whatever variant your pickle model's LabelEncoder used
+        sanitized_education = request.education.replace("'", "’").strip()
+        sanitized_country = request.country.strip()
+
         logger.info(
-            f"Prediction request: country={request.country}, "
-            f"education={request.education}, experience={request.experience}"
+            f"Prediction request incoming: country={sanitized_country}, "
+            f"education={sanitized_education}, experience={request.experience}"
         )
 
+        # Forward formatted features to your machine learning model pipeline
         salary_usd = predict_salary(
-            country=request.country,
-            education=request.education,
+            country=sanitized_country,
+            education=sanitized_education,
             experience=request.experience
         )
 
-        target_currency = get_country_currency(request.country)
+        target_currency = get_country_currency(sanitized_country)
         converted_salary = await convert_currency(salary_usd, target_currency)
 
         return PredictionResponse(
@@ -50,11 +55,11 @@ async def predict_salary_endpoint(request: PredictionRequest):
         )
 
     except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
+        logger.error(f"Validation mapping failure: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
     except Exception as e:
-        logger.error(f"Prediction failed: {str(e)}", exc_info=True)
+        logger.error(f"Prediction computation failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
