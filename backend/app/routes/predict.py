@@ -1,16 +1,18 @@
-from fastapi import APIRouter, HTTPException
+# backend/app/routes/predict.py
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from typing import Dict
 import logging
+import pandas as pd
+import io
 
-# 🌟 FIX: Absolute imports based on Root Directory = 'backend'
-# Since we are setting Root Directory to 'backend', we start imports from 'app'
+# 🌟 Absolute imports based on Root Directory = 'backend'
 from app.schemas.salary_schema import (
     PredictionRequest, 
     PredictionResponse, 
     ConvertedSalaryResponse
 )
-
 from app.ml.predict_salary import predict_salary
+from app.ml.preprocessing import clean_education
 from app.services.currency_service import (
     convert_currency,
     get_country_currency,
@@ -22,17 +24,19 @@ from app.services.currency_service import (
 # =========================================================
 logger = logging.getLogger(__name__)
 
-# Router without prefix (main.py adds it)
 router = APIRouter(tags=["Prediction"])
 
 # =========================================================
-# 🔮 PREDICTION ENDPOINT
+# 🔮 PREDICTION ENDPOINT (Single)
 # =========================================================
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_salary_endpoint(request: PredictionRequest):
     try:
-        # Sanitization
-        clean_edu = request.education.replace("’", "'").strip()
+        # Use new smart normalization
+        clean_edu = clean_education(request.education)
+        if clean_edu is None:
+            raise ValueError("Invalid education level provided")
+            
         clean_country = request.country.strip()
 
         logger.info(f"Prediction: {clean_country}, {clean_edu}, {request.experience}")
@@ -57,6 +61,55 @@ async def predict_salary_endpoint(request: PredictionRequest):
     except Exception as e:
         logger.error(f"Prediction error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal prediction engine error")
+
+# =========================================================
+# 📤 BATCH CSV UPLOAD
+# =========================================================
+@router.post("/upload-csv")
+async def upload_csv_endpoint(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+        
+        results = []
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # 1. Normalize Education
+                clean_edu = clean_education(row['EdLevel'])
+                if clean_edu is None:
+                    raise ValueError("Invalid education level")
+
+                # 2. Perform Prediction
+                salary_usd = predict_salary(
+                    country=row['Country'],
+                    education=clean_edu,
+                    experience=row['YearsCodePro']
+                )
+
+                results.append({
+                    "Country": row['Country'],
+                    "EdLevel": clean_edu,
+                    "YearsCodePro": row['YearsCodePro'],
+                    "Predicted_Salary_USD": round(float(salary_usd), 2)
+                })
+            except Exception as e:
+                # Capture row index (1-based index + header = +2)
+                errors.append({
+                    "row": index + 2,
+                    "country": row.get('Country', 'Unknown'),
+                    "error": str(e)
+                })
+        
+        return {
+            "results": results,
+            "errors": errors,
+            "successful_predictions": len(results),
+            "total_rows": len(df)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
 
 # =========================================================
 # 💱 CONVERT SALARY
