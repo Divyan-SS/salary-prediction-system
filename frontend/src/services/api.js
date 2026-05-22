@@ -1,11 +1,12 @@
+// frontend/src/services/api.js
 import axios from 'axios';
 
 // =================================================
-// 🌍 API BASE (WORKS IN LOCAL + VERCEL + RENDER)
+// 🌍 API BASE (DYNAMIC WITH HARDCODED PRODUCTION FALLBACK)
 // =================================================
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://salary-backend-z83u.onrender.com';
 
-// Remove trailing slash if it exists safely
+// Remove trailing slash if it exists safely to prevent duplicate slash routing errors
 const cleanBase = API_BASE.replace(/\/$/, '');
 
 const api = axios.create({
@@ -40,3 +41,5 @@ export const fetchAnalytics = () =>
 
 export const fetchFilteredAnalytics = (countries) =>
   api.post('/analytics/filter', { countries });
+
+export default api;
