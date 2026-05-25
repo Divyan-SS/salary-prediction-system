@@ -1,7 +1,8 @@
 // frontend/src/pages/BatchPredictPage.jsx
 import { useEffect, useRef, useState } from 'react';
 import CsvUploader from '../components/CsvUploader';
-import { uploadCSV } from '../services/api';
+import { uploadCSV, convertSalary, getSupportedCurrencies } from '../services/api';
+import toast from 'react-hot-toast';
 
 // ─── Zoom-Adaptive Deep Navy Neural Matrix Background ────────
 function NeuralCanvas() {
@@ -208,9 +209,27 @@ function NeuralCanvas() {
 
 export default function BatchPredictPage() {
   const [file, setFile] = useState(null);
-  const [batchData, setBatchData] = useState(null); // Unified object tracking backend output
+  const [batchData, setBatchData] = useState(null); 
+  const [convertedResults, setConvertedResults] = useState(null); 
+  const [targetCurrency, setTargetCurrency] = useState('USD');
+  const [supportedCurrencies, setSupportedCurrencies] = useState({ USD: 'United States Dollar' });
   const [loading, setLoading] = useState(false);
+  const [conversionLoading, setConversionLoading] = useState(false);
+  const [conversionError, setConversionError] = useState(null);
   const [error, setError] = useState(null);
+  const [showAcceptedFormats, setShowAcceptedFormats] = useState(false);
+
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      try {
+        const response = await getSupportedCurrencies();
+        if (response.data) setSupportedCurrencies(response.data);
+      } catch (err) {
+        console.error('Failed to parse remote currency options payload maps', err);
+      }
+    };
+    fetchCurrencies();
+  }, []);
 
   const handleFileChange = (selectedFile) => {
     setFile(selectedFile);
@@ -230,11 +249,13 @@ export default function BatchPredictPage() {
     try {
       setLoading(true);
       setError(null);
+      setConvertedResults(null);
+      setTargetCurrency('USD');
+      setShowAcceptedFormats(false);
       
       const response = await uploadCSV(formData);
       setBatchData(response.data);
     } catch (err) {
-      console.error("Batch deployment routing error:", err.response?.data || err.message);
       const errorMsg = err.response?.data?.detail || "Network error: Connection to prediction service failed.";
       setError(errorMsg);
     } finally {
@@ -242,23 +263,59 @@ export default function BatchPredictPage() {
     }
   };
 
-  const downloadResultsCSV = () => {
-    if (!batchData || !batchData.results || batchData.results.length === 0) return;
+  const handleBatchConvert = async () => {
+    if (!batchData || !batchData.results) return;
+    setConversionLoading(true);
+    setConversionError(null);
 
-    const headers = ["Country", "EdLevel", "YearsCodePro", "PredictedSalaryUSD\n"];
-    const rows = batchData.results.map(row => {
+    try {
+      if (targetCurrency === 'USD') {
+        setConvertedResults(null); 
+        return;
+      }
+
+      const converted = await Promise.all(
+        batchData.results.map(async (row) => {
+          const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
+          if (typeof baseUsd !== 'number') {
+            return { ...row, Converted_Salary: null };
+          }
+          const response = await convertSalary(baseUsd, targetCurrency);
+          return {
+            ...row,
+            Converted_Salary: response.data.converted_salary ?? response.data.predicted_salary,
+          };
+        })
+      );
+      setConvertedResults(converted);
+      toast.success(`Batch successfully mapped to ${targetCurrency}`);
+    } catch (err) {
+      setConversionError(err.response?.data?.detail || err.message || 'Batch conversion system fault.');
+    } finally {
+      setConversionLoading(false);
+    }
+  };
+
+  const downloadResultsCSV = () => {
+    const activeRows = convertedResults || batchData?.results;
+    if (!activeRows || activeRows.length === 0) return;
+
+    const headers = ["Country", "EdLevel", "YearsCodePro", `PredictedSalary_${targetCurrency}\n`];
+    const rows = activeRows.map(row => {
       const country = row.Country || "Unknown";
       const education = row.EdLevel || "Unspecified";
       const experience = row.YearsCodePro || "0";
-      const salary = row.Predicted_Salary_USD || 0;
-      return `"${country}","${education}",${experience},${parseFloat(salary).toFixed(2)}\n`;
+      const displayVal = targetCurrency === 'USD' 
+        ? (row.Predicted_Salary_USD ?? 0) 
+        : (row.Converted_Salary ?? "—");
+      return `"${country}","${education}",${experience},${displayVal}\n`;
     });
 
     const blob = new Blob([headers.join(','), ...rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `salary_predictions_${Date.now()}.csv`);
+    link.setAttribute("download", `salary_predictions_${targetCurrency.toLowerCase()}_export.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -275,9 +332,15 @@ export default function BatchPredictPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes slide-down {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         .animate-float { animation: float-in 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) both; }
         .animate-float-delay { animation: float-in 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) 0.15s both; }
         .animate-float-delay-2 { animation: float-in 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) 0.3s both; }
+        .animate-slide-down { animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
         .glass-panel {
           background: rgba(10, 15, 30, 0.45);
@@ -286,21 +349,12 @@ export default function BatchPredictPage() {
           border: 1px solid rgba(255, 255, 255, 0.06);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
         }
+        
+        select option { background-color: #0d1527; color: #ffffff; }
 
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.02);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
       `}</style>
 
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
@@ -334,67 +388,148 @@ export default function BatchPredictPage() {
           )}
 
           {batchData && (
-            <div className="animate-float glass-panel mt-8 rounded-3xl p-6 md:p-8 w-full border border-white/10 text-white">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Processed Predictions Matrix</h2>
-                  <div className="flex flex-wrap gap-3 mt-1.5 text-xs sm:text-sm">
-                    <span className="text-emerald-400 font-medium">✅ Successful: {batchData.successful_predictions} / {batchData.total_rows}</span>
-                    {batchData.rows_dropped_due_to_education > 0 && (
-                      <span className="text-yellow-400 font-medium">⚠️ {batchData.rows_dropped_due_to_education} Skipped Rows (Invalid EdLevel)</span>
-                    )}
+            <div className="space-y-6 mt-8 animate-float">
+              <div className="glass-panel rounded-3xl p-6 md:p-8 w-full border border-white/10 text-white">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight">Processed Predictions Matrix</h2>
+                    <div className="flex flex-wrap gap-3 mt-1.5 text-xs sm:text-sm">
+                      <span className="text-emerald-400 font-medium">✅ Successful: {batchData.successful_predictions} / {batchData.total_rows}</span>
+                      {batchData.rows_dropped_due_to_education > 0 && (
+                        <span className="text-yellow-400 font-medium">⚠️ {batchData.rows_dropped_due_to_education} Skipped Rows (Invalid EdLevel)</span>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={downloadResultsCSV}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-500/20 active:scale-95"
+                  >
+                    📥 Export Completed CSV
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={downloadResultsCSV}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-500/20 active:scale-95"
-                >
-                  📥 Export Completed CSV
-                </button>
+
+                {batchData.errors && batchData.errors.length > 0 && (
+                  <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+                      <p className="text-sm font-semibold text-red-400">Skipped Matrix Records ({batchData.errors.length})</p>
+                      
+                      {/* FIX: Interactive Toggle Button added for accepted guide sheet layouts */}
+                      <button
+                        type="button"
+                        onClick={() => setShowAcceptedFormats(!showAcceptedFormats)}
+                        className="text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 transition text-sky-400 flex items-center gap-1.5"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {showAcceptedFormats ? "Hide Accepted Layout Guide" : "View Accepted Formats & Examples"}
+                      </button>
+                    </div>
+
+                    {/* FIX: Conditional Guide Section Area with Examples Mapping */}
+                    {showAcceptedFormats && (
+                      <div className="mb-4 p-4 rounded-xl bg-slate-950/60 border border-white/5 text-xs text-slate-300 space-y-3 animate-slide-down">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-sans">
+                          <div>
+                            <strong className="text-white block mb-1">1. Country (Exact Strings)</strong>
+                            <code className="text-emerald-400 block font-mono text-[11px]">United States, India, Germany, Canada</code>
+                          </div>
+                          <div>
+                            <strong className="text-white block mb-1">2. EdLevel (Mapped Tiers)</strong>
+                            <code className="text-emerald-400 block font-mono text-[11px]">Bachelor’s degree, Master’s degree</code>
+                          </div>
+                          <div>
+                            <strong className="text-white block mb-1">3. YearsCodePro (Tenure)</strong>
+                            <code className="text-emerald-400 block font-mono text-[11px]">3, 12, Less than 1 year, More than 50 years</code>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <ul className="text-xs text-red-300 list-disc list-inside max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                      {batchData.errors.map((err, i) => (
+                        <li key={i}>Row {err.row}: {err.country || "Data Syntax Fault"} — {err.error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px]">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      {/* FIX: Replaced transparent background 'bg-white/5' with a solid opaque color '#0f1626' to prevent data bleeding when scrolling */}
+                      <tr className="border-b border-white/10 bg-[#0f1626] text-slate-300 font-semibold sticky top-0 z-10">
+                        <th className="p-4">Country</th>
+                        <th className="p-4">Education Level</th>
+                        <th className="p-4">Experience</th>
+                        <th className="p-4 text-emerald-400">Base Salary (USD)</th>
+                        <th className="p-4 text-sky-400">Converted Salary ({targetCurrency})</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-medium text-slate-200">
+                      {(convertedResults || batchData.results).map((row, index) => {
+                        const baseSalary = row.Predicted_Salary_USD || row.PredictedSalary;
+                        return (
+                          <tr key={index} className="hover:bg-white/[0.02] transition">
+                            <td className="p-4">{row.Country || "Unknown"}</td>
+                            <td className="p-4 text-xs">
+                              <span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">
+                                {row.EdLevel || "Unspecified"}
+                              </span>
+                            </td>
+                            <td className="p-4">{row.YearsCodePro || "0"} Years</td>
+                            <td className="p-4 font-bold text-emerald-400 font-mono">
+                              {baseSalary ? `$${parseFloat(baseSalary).toLocaleString()}` : '❌ Error'}
+                            </td>
+                            <td className="p-4 font-bold text-sky-400 font-mono">
+                              {typeof row.Converted_Salary === 'number'
+                                ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
+                                : targetCurrency === 'USD' && baseSalary ? `$${parseFloat(baseSalary).toLocaleString()}` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Individual Row Validation Messages Area */}
-              {batchData.errors && batchData.errors.length > 0 && (
-                <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
-                  <p className="text-sm font-semibold text-red-400 mb-2">Skipped Matrix Records</p>
-                  <ul className="text-xs text-red-300 list-disc list-inside max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
-                    {batchData.errors.map((err, i) => (
-                      <li key={i}>Row {err.row}: {err.country} — {err.error}</li>
-                    ))}
-                  </ul>
+              {/* Currency Converter Controller Block Area */}
+              <div className="glass-panel rounded-3xl p-6 border border-white/10 text-white">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold text-slate-300 mb-2">Map Evaluation Target Currency</label>
+                    <select
+                      value={targetCurrency}
+                      onChange={(e) => setTargetCurrency(e.target.value)}
+                      className="w-full sm:w-64 bg-slate-900 border border-white/10 text-white rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 backdrop-blur-sm"
+                    >
+                      {Object.entries(supportedCurrencies).map(([code, name]) => (
+                        <option key={code} value={code}>{code} - {name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleBatchConvert}
+                      disabled={conversionLoading}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50 flex items-center gap-2 shadow-md shadow-emerald-600/10"
+                    >
+                      {conversionLoading ? "Transforming Vector Matrix..." : "Convert Complete Batch"}
+                    </button>
+                    <button
+                      onClick={() => { setConvertedResults(null); setTargetCurrency('USD'); }}
+                      disabled={!convertedResults}
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-30"
+                    >
+                      Reset Base view
+                    </button>
+                  </div>
                 </div>
-              )}
-
-              <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px]">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 bg-white/5 text-slate-300 font-semibold sticky top-0 backdrop-blur-md z-10">
-                      <th className="p-4">Country</th>
-                      <th className="p-4">Education Level</th>
-                      <th className="p-4">Experience</th>
-                      <th className="p-4 text-sky-400">Predicted Salary (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 font-medium text-slate-200">
-                    {batchData.results && batchData.results.map((row, index) => (
-                      <tr key={index} className="hover:bg-white/[0.02] transition">
-                        <td className="p-4">{row.Country || "Unknown"}</td>
-                        <td className="p-4 text-xs">
-                          <span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">
-                            {row.EdLevel || "Unspecified"}
-                          </span>
-                        </td>
-                        <td className="p-4">{row.YearsCodePro || "0"} Years</td>
-                        <td className="p-4 font-bold text-sky-400 text-base">
-                          {row.Predicted_Salary_USD 
-                            ? `$${parseFloat(row.Predicted_Salary_USD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                            : '❌ Error'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {conversionError && (
+                  <div className="mt-3 text-sm text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3">{conversionError}</div>
+                )}
               </div>
             </div>
           )}
@@ -404,8 +539,6 @@ export default function BatchPredictPage() {
               <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full text-gray-300">Template: country, education, experience</span>
               <span className="text-zinc-800">•</span>
               <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full text-gray-300">Process up to 1000 rows</span>
-              <span className="text-zinc-800">•</span>
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full text-gray-300">Download results as CSV</span>
             </div>
           </div>
         </main>
