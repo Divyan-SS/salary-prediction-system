@@ -1,7 +1,7 @@
 // frontend/src/pages/ExplorePage.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchFilteredAnalytics, fetchAnalytics } from '../services/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   ResponsiveContainer,
@@ -270,6 +270,7 @@ export default function ExplorePage() {
   const [educationSearch, setEducationSearch] = useState('');
 
   const [experienceRange, setExperienceRange] = useState([0, 50]);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const [analytics, setAnalytics] = useState({
     summary_stats: { average_salary: 0, highest_salary: 0, lowest_salary: 0, total_records: 0 },
@@ -632,6 +633,91 @@ export default function ExplorePage() {
   const showEmptyEducationMessage = selectedCountries.length > 0 && selectedEducationLevels.length === 0;
   const showNoCountryMessage = selectedCountries.length === 0;
 
+  // Reusable Filter Element to maintain structural single-source mapping layout configurations
+  const FilterSidebarContent = () => (
+    <div className="glass-panel xl:bg-transparent xl:border-none xl:box-none xl:shadow-none rounded-r-3xl xl:rounded-none p-5 h-full overflow-y-auto custom-scrollbar space-y-6">
+      <div className="flex items-center justify-between xl:hidden pb-4 border-b border-white/5">
+        <h2 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters Matrix</h2>
+        <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2.5 gap-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-200">Countries</h3>
+          <button onClick={handleSelectAllCountries} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
+        </div>
+        <input
+          type="search"
+          value={countrySearch}
+          onChange={(e) => setCountrySearch(e.target.value)}
+          placeholder="Search country"
+          className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+        />
+        <div className="max-h-48 sm:max-h-64 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
+          {visibleCountries.map((country) => (
+            <label key={country} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
+              <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedCountries.includes(country)} onChange={() => handleCountryToggle(country)} />
+              <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{country}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2.5 gap-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-200">Education</h3>
+          <button onClick={handleSelectAllEducation} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
+        </div>
+        <input
+          type="search"
+          value={educationSearch}
+          onChange={(e) => setEducationSearch(e.target.value)}
+          placeholder="Search education"
+          className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+        />
+        <div className="max-h-40 sm:max-h-52 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
+          {visibleEducationLevels.map((education) => (
+            <label key={education} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
+              <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedEducationLevels.includes(education)} onChange={() => handleEducationToggle(education)} />
+              <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{education}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
+        <div className="flex justify-between items-center gap-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-200">Experience Range</h3>
+          <span className="text-[10px] sm:text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full shrink-0">{experienceRange[0]} - {experienceRange[1]} yrs</span>
+        </div>
+        <div className="mt-3.5">
+          <label className="text-xs sm:text-sm font-semibold text-slate-300">Minimum Experience</label>
+          <input type="range" min={0} max={50} value={experienceRange[0]} onChange={(e) => setExperienceRange([Math.min(Number(e.target.value), experienceRange[1]), experienceRange[1]])} className="w-full mt-1.5 accent-sky-500 h-1" />
+        </div>
+        <div className="mt-3.5">
+          <label className="text-xs sm:text-sm font-semibold text-slate-300">Maximum Experience</label>
+          <input type="range" min={0} max={50} value={experienceRange[1]} onChange={(e) => setExperienceRange([experienceRange[0], Math.max(Number(e.target.value), experienceRange[0])])} className="w-full mt-1.5 accent-sky-500 h-1" />
+        </div>
+      </div>
+
+      <div className="border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
+        <h2 className="text-xs sm:text-sm font-bold text-slate-200 mb-3 tracking-tight">Chart Visibility</h2>
+        <div className="space-y-2 max-h-48 xl:max-h-none overflow-y-auto custom-scrollbar pr-1">
+          {chartSections.map((section) => (
+            <label key={section.id} className="flex items-center gap-2.5 bg-zinc-950/40 backdrop-blur-sm border border-zinc-800/60 rounded-xl px-3.5 py-2.5 hover:bg-white/5 transition cursor-pointer">
+              <input type="checkbox" className="accent-sky-500 shrink-0" checked={chartVisibility[section.id]} onChange={() => setChartVisibility((prev) => ({ ...prev, [section.id]: !prev[section.id] }))} />
+              <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{section.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <style>{`
@@ -689,6 +775,19 @@ export default function ExplorePage() {
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-start p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
         <NeuralCanvas />
 
+        {/* Floating Mobile Filter Toggle Button for a clean Left Drawer action */}
+        <div className="xl:hidden fixed bottom-6 left-6 z-[4000]">
+          <button 
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-95 text-white px-5 py-3 rounded-full font-bold shadow-xl shadow-sky-500/20 text-sm tracking-wide"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 11.414V17a1 1 0 01-.447.894l-4 2A1 1 0 017 19v-7.586L3.293 7.707A1 1 0 013 7V4z" />
+            </svg>
+            Filters Matrix
+          </button>
+        </div>
+
         <div className="w-full max-w-7xl mx-auto relative z-10 py-4 sm:py-0">
           <div className="text-center mb-8 sm:mb-10">
             <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-4 py-1.5 sm:px-5 sm:py-2 border border-sky-500/20 shadow-sm mb-4 sm:mb-6">
@@ -710,83 +809,38 @@ export default function ExplorePage() {
           </div>
 
           <div className="grid gap-6 grid-cols-1 xl:grid-cols-[300px_1fr] items-start w-full max-w-[340px] sm:max-w-full mx-auto">
-            {/* Filter Sidebar Panel Layer */}
-            <section className="space-y-6 w-full">
-              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm card-hover">
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters</h2>
-
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-2.5 gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Countries</h3>
-                    <button onClick={handleSelectAllCountries} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
-                  </div>
-                  <input
-                    type="search"
-                    value={countrySearch}
-                    onChange={(e) => setCountrySearch(e.target.value)}
-                    placeholder="Search country"
-                    className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                  <div className="max-h-48 sm:max-h-64 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
-                    {visibleCountries.map((country) => (
-                      <label key={country} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
-                        <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedCountries.includes(country)} onChange={() => handleCountryToggle(country)} />
-                        <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{country}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-2.5 gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Education</h3>
-                    <button onClick={handleSelectAllEducation} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
-                  </div>
-                  <input
-                    type="search"
-                    value={educationSearch}
-                    onChange={(e) => setEducationSearch(e.target.value)}
-                    placeholder="Search education"
-                    className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                  <div className="max-h-40 sm:max-h-52 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
-                    {visibleEducationLevels.map((education) => (
-                      <label key={education} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
-                        <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedEducationLevels.includes(education)} onChange={() => handleEducationToggle(education)} />
-                        <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{education}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
-                  <div className="flex justify-between items-center gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Experience Range</h3>
-                    <span className="text-[10px] sm:text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full shrink-0">{experienceRange[0]} - {experienceRange[1]} yrs</span>
-                  </div>
-                  <div className="mt-3.5">
-                    <label className="text-xs sm:text-sm font-semibold text-slate-300">Minimum Experience</label>
-                    <input type="range" min={0} max={50} value={experienceRange[0]} onChange={(e) => setExperienceRange([Math.min(Number(e.target.value), experienceRange[1]), experienceRange[1]])} className="w-full mt-1.5 accent-sky-500 h-1" />
-                  </div>
-                  <div className="mt-3.5">
-                    <label className="text-xs sm:text-sm font-semibold text-slate-300">Maximum Experience</label>
-                    <input type="range" min={0} max={50} value={experienceRange[1]} onChange={(e) => setExperienceRange([experienceRange[0], Math.max(Number(e.target.value), experienceRange[0])])} className="w-full mt-1.5 accent-sky-500 h-1" />
-                  </div>
-                </div>
+            {/* Desktop Left-Sidebar Panel Layer View (Hidden on mobile) */}
+            <aside className="hidden xl:block w-full sticky top-24">
+              <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover">
+                <FilterSidebarContent />
               </div>
+            </aside>
 
-              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm card-hover select-none">
-                <h2 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Chart Visibility</h2>
-                <div className="space-y-2 max-h-48 sm:max-h-none overflow-y-auto custom-scrollbar pr-1">
-                  {chartSections.map((section) => (
-                    <label key={section.id} className="flex items-center gap-2.5 bg-zinc-950/40 backdrop-blur-sm border border-zinc-800/60 rounded-xl px-3.5 py-2.5 sm:py-3 hover:bg-white/5 transition cursor-pointer">
-                      <input type="checkbox" className="accent-sky-500 shrink-0" checked={chartVisibility[section.id]} onChange={() => setChartVisibility((prev) => ({ ...prev, [section.id]: !prev[section.id] }))} />
-                      <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{section.label}</span>
-                    </label>
-                  ))}
+            {/* Mobile Left Drawer Backdrop Overlay Layer */}
+            <AnimatePresence>
+              {isMobileFilterOpen && (
+                <div className="xl:hidden fixed inset-0 z-[4500] flex justify-start">
+                  {/* Backdrop */}
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                  />
+                  {/* Left Drawer Sheet */}
+                  <motion.div 
+                    initial={{ x: '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                    className="relative w-full max-w-[300px] h-full z-10"
+                  >
+                    <FilterSidebarContent />
+                  </motion.div>
                 </div>
-              </div>
-            </section>
+              )}
+            </AnimatePresence>
 
             {/* Analytics Content Graphs Matrix Area Layout */}
             <section className="space-y-6 w-full min-w-0">
