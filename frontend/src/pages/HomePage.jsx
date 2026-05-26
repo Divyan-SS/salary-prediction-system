@@ -292,7 +292,7 @@ export default function HomePage() {
               Salary intelligence at your fingertips
             </h1>
             
-            <p className="animate-float-delay text-sm sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leisure-relaxed leading-relaxed px-4 sm:px-0">
+            <p className="animate-float-delay text-sm sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed px-4 sm:px-0">
               Get individual estimates, process bulk records, or explore market trends – all powered by real salary data.
             </p>
           </div>
@@ -355,13 +355,6 @@ export default function HomePage() {
                 </div>
               </motion.div>
             </Link>
-          </div>
-
-          <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-50 animate-bounce text-center w-full px-4">
-            <span className="text-[10px] sm:text-xs uppercase text-slate-400 tracking-widest font-medium">Scroll</span>
-            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
           </div>
         </section>
 
