@@ -508,7 +508,7 @@ export default function ExplorePage() {
         })) || [];
         return barData.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={barData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
+            <BarChart data={barData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="category" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -520,7 +520,7 @@ export default function ExplorePage() {
       case 'salaryVsExperience':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <LineChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
+            <LineChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -25, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -546,7 +546,7 @@ export default function ExplorePage() {
       case 'salaryGrowthArea':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
+            <AreaChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -25, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -572,10 +572,10 @@ export default function ExplorePage() {
       case 'topPayingCountries':
         return topPayingCountries.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={topPayingCountries} layout="vertical" margin={{ top: 10, right: 15, left: -10, bottom: 5 }}>
+            <BarChart data={topPayingCountries} layout="vertical" margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} />
-              <YAxis dataKey="category" type="category" width={window.innerWidth < 640 ? 70 : 100} tick={axisLabelConfig} stroke="#f8fafc" />
+              <YAxis dataKey="category" type="category" width={window.innerWidth < 640 ? 75 : 100} tick={axisLabelConfig} stroke="#f8fafc" />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Bar dataKey="mean_salary" fill="#fb923c" radius={[0, 8, 8, 0]} maxBarSize={30} />
             </BarChart>
@@ -584,7 +584,7 @@ export default function ExplorePage() {
       case 'stackedEducationByCountry':
         return stackedEducationData.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={stackedEducationData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
+            <BarChart data={stackedEducationData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="country" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -599,7 +599,7 @@ export default function ExplorePage() {
       case 'experienceScatter':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <ScatterChart margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
+            <ScatterChart margin={{ top: 10, right: 15, left: -25, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" type="number" tick={axisLabelConfig} stroke="#f8fafc" name="Experience" unit="yrs" />
               <YAxis dataKey="mean_salary" type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} name="Salary" />
@@ -709,7 +709,7 @@ export default function ExplorePage() {
             </p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[300px_1fr] items-start w-full max-w-[340px] sm:max-w-full mx-auto">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[300px_1fr] items-start w-full max-w-[340px] sm:max-w-full mx-auto">
             {/* Filter Sidebar Panel Layer */}
             <section className="space-y-6 w-full">
               <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm card-hover">
@@ -859,7 +859,7 @@ export default function ExplorePage() {
               )}
 
               {!loading && !showNoCountryMessage && !showEmptyEducationMessage && !error && analytics && (
-                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full">
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 w-full">
                   {chartSections.map((section, idx) => {
                     if (!chartVisibility[section.id]) return null;
                     
