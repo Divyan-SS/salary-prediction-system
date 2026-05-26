@@ -491,7 +491,8 @@ Frontend dependencies:
 - `frontend/src/utils/helpers.js` is present but currently empty
 - `backend/app/ml/evaluate_model.py` exists but has no implementation
 - Frontend `ExplorePage.jsx` passes extra filters to `fetchFilteredAnalytics` that backend does not process
-- Batch CSV conversion currently issues one conversion request per row, which can be optimized by a single batch endpoint
+- Batch CSV conversion currently issues one conversion request per row via `Promise.all` in `BatchPredictPage.jsx`, which can be heavily optimized by a dedicated bulk conversion endpoint
+- The backend contains duplicated implementations of the `/upload-csv` endpoint across `routes/predict.py` and `routes/upload.py`
 - The backend currency map is limited to a handful of countries and defaults unknown countries to USD
 
 11. Recommendations for Further Enhancement
