@@ -1,10 +1,15 @@
 ﻿// Navbar.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+
+  // Global top-scroll hook injected right inside the existing navbar mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]); // Automatically resets scroll position whenever the path changes
 
   return (
     <>
