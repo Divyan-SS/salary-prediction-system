@@ -74,7 +74,7 @@ function NeuralCanvas() {
       });
     }
 
-    const CONNECT_DIST = window.innerWidth < 768 ? 120 : 170;
+    const CONNECT_DIST = window.innerWidth < 768 ? 100 : 170;
     const PRIMARY_HSL = "199, 100%, 65%"; 
     const ACCENT_HSL = "260, 90%, 70%";   
 
@@ -224,7 +224,7 @@ export default function IndividualPredictPage() {
         }
 
         @keyframes float-in {
-          from { opacity: 0; transform: translateY(28px); }
+          from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
 
@@ -260,67 +260,67 @@ export default function IndividualPredictPage() {
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
         <NeuralCanvas />
 
-        <div className="w-full max-w-4xl mx-auto py-6 relative z-10">
+        <div className="w-full max-w-4xl mx-auto py-4 sm:py-6 relative z-10">
           
-          <div className="text-center mb-12">
-            <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-5 py-2 border border-sky-500/20 shadow-sm mb-6">
-              <span className="relative flex h-2.5 w-2.5">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-4 py-1.5 sm:px-5 sm:py-2 border border-sky-500/20 shadow-sm mb-4 sm:mb-6">
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-sky-400"></span>
               </span>
-              <span className="text-sm font-semibold text-sky-400 tracking-wide">
+              <span className="text-xs sm:text-sm font-semibold text-sky-400 tracking-wide">
                 Personalized Estimate
               </span>
             </div>
 
-            <h1 className="animate-float text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
+            <h1 className="animate-float text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3 sm:mb-4 px-2" style={{ fontFamily: "var(--font-display)", lineHeight: 1.2 }}>
               Individual Salary Prediction
             </h1>
 
-            <p className="animate-float-delay text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="animate-float-delay text-xs sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed px-4 sm:px-0">
               Enter your profile details below to get an AI-powered salary estimate tailored to your country,
               education level, and years of experience.
             </p>
           </div>
 
-          <div className="relative flex flex-col justify-start items-start w-full group mx-auto animate-float-delay-2">
-            <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%)', filter: 'blur(50px)' }} />
+          <div className="relative flex flex-col justify-start items-start w-full max-w-[340px] sm:max-w-full group mx-auto animate-float-delay-2">
+            <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%)', filter: 'blur(45px) sm:blur(50px)' }} />
             
-            <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%) border-box' }}>
-              <div className="bg-zinc-900/40 px-6 py-5 border-b border-zinc-800/60 backdrop-blur-md">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2" style={{ fontFamily: "var(--font-display)" }}>
-                  <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%) border-box' }}>
+              <div className="bg-zinc-900/40 px-5 py-4 sm:px-6 sm:py-5 border-b border-zinc-800/60 backdrop-blur-md">
+                <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2" style={{ fontFamily: "var(--font-display)" }}>
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Your Information
                 </h2>
-                <p className="text-sm text-slate-300 mt-1">Fill in the fields below to receive your salary prediction</p>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-normal">Fill in the fields below to receive your salary prediction</p>
               </div>
               
-              <div className="p-6 md:p-8 backdrop-blur-md">
+              <div className="p-4 sm:p-6 md:p-8 backdrop-blur-md">
                 <PredictionForm />
               </div>
             </div>
           </div>
 
-          <div className="animate-float-delay-2 mt-12 text-center">
-            <div className="inline-flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm text-slate-300 font-medium">
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
-                <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="animate-float-delay-2 mt-8 sm:mt-12 text-center px-2">
+            <div className="inline-flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-300 font-medium w-full sm:w-auto">
+              <span className="flex items-center justify-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm w-[240px] sm:w-auto">
+                <svg className="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 Secure & Private
               </span>
               <span className="text-zinc-800 hidden sm:inline">•</span>
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex items-center justify-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm w-[240px] sm:w-auto">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Instant Results
               </span>
               <span className="text-zinc-800 hidden sm:inline">•</span>
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
-                <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex items-center justify-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm w-[240px] sm:w-auto">
+                <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Based on Real Data

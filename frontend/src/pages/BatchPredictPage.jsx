@@ -76,7 +76,7 @@ function NeuralCanvas() {
       });
     }
 
-    const CONNECT_DIST = window.innerWidth < 768 ? 120 : 170;
+    const CONNECT_DIST = window.innerWidth < 768 ? 100 : 170;
     const PRIMARY_HSL = "199, 100%, 65%"; 
     const ACCENT_HSL = "260, 90%, 70%";   
 
@@ -360,17 +360,17 @@ export default function BatchPredictPage() {
       <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
         <NeuralCanvas />
 
-        <main className="w-full max-w-4xl mx-auto py-6 relative z-10">
-          <div className="text-center mb-12">
-            <h1 className="animate-float text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">Batch Salary Prediction</h1>
-            <p className="animate-float-delay text-base sm:text-lg text-slate-300 max-w-2xl mx-auto">
+        <main className="w-full max-w-4xl mx-auto py-4 sm:py-6 relative z-10">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="animate-float text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3 sm:mb-4 px-2" style={{ fontFamily: "var(--font-display)", lineHeight: 1.2 }}>Batch Salary Prediction</h1>
+            <p className="animate-float-delay text-sm sm:text-lg text-slate-300 max-w-2xl mx-auto px-4 sm:px-0">
               Upload a CSV file and get instant salary predictions for your entire team.
             </p>
           </div>
 
-          <div className="relative flex flex-col w-full group mx-auto animate-float-delay-2">
-            <div className="self-stretch rounded-[40px] z-10 overflow-hidden" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #7DD3FC 50%, #06B6D4 100%) border-box' }}>
-              <div className="p-6 md:p-8 backdrop-blur-md">
+          <div className="relative flex flex-col w-full max-w-[340px] sm:max-w-full group mx-auto animate-float-delay-2">
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #7DD3FC 50%, #06B6D4 100%) border-box' }}>
+              <div className="p-4 sm:p-6 md:p-8 backdrop-blur-md">
                 <CsvUploader 
                   onFileSelect={handleFileChange}
                   onUploadSubmit={handleUploadSubmit}
@@ -381,19 +381,19 @@ export default function BatchPredictPage() {
           </div>
 
           {error && (
-            <div className="animate-float glass-panel mt-6 rounded-2xl border-red-500/20 bg-red-500/5 p-4 text-red-400 text-sm flex items-center gap-3 max-w-4xl w-full mx-auto">
-              <span>⚠️</span>
+            <div className="animate-float glass-panel mt-6 rounded-2xl border-red-500/20 bg-red-500/5 p-4 text-red-400 text-xs sm:text-sm flex items-start sm:items-center gap-3 max-w-4xl w-full mx-auto">
+              <span className="shrink-0">⚠️</span>
               <p><strong>Upload Failed:</strong> {error}</p>
             </div>
           )}
 
           {batchData && (
-            <div className="space-y-6 mt-8 animate-float">
-              <div className="glass-panel rounded-3xl p-6 md:p-8 w-full border border-white/10 text-white">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="space-y-6 mt-6 sm:mt-8 animate-float w-full max-w-[340px] sm:max-w-full mx-auto">
+              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full border border-white/10 text-white">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h2 className="text-xl font-bold tracking-tight">Processed Predictions Matrix</h2>
-                    <div className="flex flex-wrap gap-3 mt-1.5 text-xs sm:text-sm">
+                    <h2 className="text-lg sm:text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Processed Predictions Matrix</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mt-1.5 text-xs sm:text-sm">
                       <span className="text-emerald-400 font-medium">✅ Successful: {batchData.successful_predictions} / {batchData.total_rows}</span>
                       {batchData.rows_dropped_due_to_education > 0 && (
                         <span className="text-yellow-400 font-medium">⚠️ {batchData.rows_dropped_due_to_education} Skipped Rows (Invalid EdLevel)</span>
@@ -403,68 +403,65 @@ export default function BatchPredictPage() {
                   <button
                     type="button"
                     onClick={downloadResultsCSV}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-500/20 active:scale-95"
+                    className="w-full md:w-auto justify-center bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-500/20 active:scale-95"
                   >
-                    📥 Export Completed CSV
+                    <span>📥</span> Export Completed CSV
                   </button>
                 </div>
 
                 {batchData.errors && batchData.errors.length > 0 && (
                   <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 mb-4 backdrop-blur-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
-                      <p className="text-sm font-semibold text-red-400">Skipped Matrix Records ({batchData.errors.length})</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                      <p className="text-xs sm:text-sm font-semibold text-red-400">Skipped Matrix Records ({batchData.errors.length})</p>
                       
-                      {/* FIX: Interactive Toggle Button added for accepted guide sheet layouts */}
                       <button
                         type="button"
                         onClick={() => setShowAcceptedFormats(!showAcceptedFormats)}
-                        className="text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 transition text-sky-400 flex items-center gap-1.5"
+                        className="text-[11px] sm:text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 transition text-sky-400 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {showAcceptedFormats ? "Hide Accepted Layout Guide" : "View Accepted Formats & Examples"}
                       </button>
                     </div>
 
-                    {/* FIX: Conditional Guide Section Area with Examples Mapping */}
                     {showAcceptedFormats && (
-                      <div className="mb-4 p-4 rounded-xl bg-slate-950/60 border border-white/5 text-xs text-slate-300 space-y-3 animate-slide-down">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-sans">
+                      <div className="mb-4 p-3 sm:p-4 rounded-xl bg-slate-950/60 border border-white/5 text-[11px] sm:text-xs text-slate-300 space-y-3 sm:space-y-0 animate-slide-down">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-sans">
                           <div>
-                            <strong className="text-white block mb-1">1. Country (Exact Strings)</strong>
-                            <code className="text-emerald-400 block font-mono text-[11px]">United States, India, Germany, Canada</code>
+                            <strong className="text-white block mb-0.5 sm:mb-1">1. Country (Exact Strings)</strong>
+                            <code className="text-emerald-400 block font-mono text-[10px] sm:text-[11px] break-words">United States, India, Germany, Canada</code>
                           </div>
                           <div>
-                            <strong className="text-white block mb-1">2. EdLevel (Mapped Tiers)</strong>
-                            <code className="text-emerald-400 block font-mono text-[11px]">Bachelor’s degree, Master’s degree</code>
+                            <strong className="text-white block mb-0.5 sm:mb-1">2. EdLevel (Mapped Tiers)</strong>
+                            <code className="text-emerald-400 block font-mono text-[10px] sm:text-[11px] break-words">Bachelor’s degree, Master’s degree</code>
                           </div>
                           <div>
-                            <strong className="text-white block mb-1">3. YearsCodePro (Tenure)</strong>
-                            <code className="text-emerald-400 block font-mono text-[11px]">3, 12, Less than 1 year, More than 50 years</code>
+                            <strong className="text-white block mb-0.5 sm:mb-1">3. YearsCodePro (Tenure)</strong>
+                            <code className="text-emerald-400 block font-mono text-[10px] sm:text-[11px] break-words">3, 12, Less than 1 year</code>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    <ul className="text-xs text-red-300 list-disc list-inside max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                    <ul className="text-[11px] sm:text-xs text-red-300 list-disc list-inside max-h-32 overflow-y-auto space-y-1 custom-scrollbar pr-1">
                       {batchData.errors.map((err, i) => (
-                        <li key={i}>Row {err.row}: {err.country || "Data Syntax Fault"} — {err.error}</li>
+                        <li key={i} className="break-words">Row {err.row}: {err.country || "Data Syntax Fault"} — {err.error}</li>
                       ))}
                     </ul>
                   </div>
                 )}
 
-                <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px]">
-                  <table className="w-full text-left border-collapse text-sm">
+                <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/20 custom-scrollbar max-h-[380px] w-full">
+                  <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[640px] sm:min-w-full">
                     <thead>
-                      {/* FIX: Replaced transparent background 'bg-white/5' with a solid opaque color '#0f1626' to prevent data bleeding when scrolling */}
-                      <tr className="border-b border-white/10 bg-[#0f1626] text-slate-300 font-semibold sticky top-0 z-10">
-                        <th className="p-4">Country</th>
-                        <th className="p-4">Education Level</th>
-                        <th className="p-4">Experience</th>
-                        <th className="p-4 text-emerald-400">Base Salary (USD)</th>
-                        <th className="p-4 text-sky-400">Converted Salary ({targetCurrency})</th>
+                      <tr className="border-b border-white/10 bg-[#0f1626] text-slate-300 font-semibold sticky top-0 z-10 text-[11px] sm:text-xs">
+                        <th className="p-3 sm:p-4">Country</th>
+                        <th className="p-3 sm:p-4">Education Level</th>
+                        <th className="p-3 sm:p-4">Experience</th>
+                        <th className="p-3 sm:p-4 text-emerald-400">Base Salary (USD)</th>
+                        <th className="p-3 sm:p-4 text-sky-400">Converted Salary ({targetCurrency})</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 font-medium text-slate-200">
@@ -472,17 +469,17 @@ export default function BatchPredictPage() {
                         const baseSalary = row.Predicted_Salary_USD || row.PredictedSalary;
                         return (
                           <tr key={index} className="hover:bg-white/[0.02] transition">
-                            <td className="p-4">{row.Country || "Unknown"}</td>
-                            <td className="p-4 text-xs">
-                              <span className="bg-white/5 px-2.5 py-1 rounded-md text-slate-300 border border-white/5">
+                            <td className="p-3 sm:p-4 truncate max-w-[140px]">{row.Country || "Unknown"}</td>
+                            <td className="p-3 sm:p-4">
+                              <span className="inline-block bg-white/5 px-2 py-0.5 rounded text-[11px] sm:text-xs text-slate-300 border border-white/5 truncate max-w-[180px]">
                                 {row.EdLevel || "Unspecified"}
                               </span>
                             </td>
-                            <td className="p-4">{row.YearsCodePro || "0"} Years</td>
-                            <td className="p-4 font-bold text-emerald-400 font-mono">
+                            <td className="p-3 sm:p-4 whitespace-nowrap">{row.YearsCodePro || "0"} Years</td>
+                            <td className="p-3 sm:p-4 font-bold text-emerald-400 font-mono whitespace-nowrap">
                               {baseSalary ? `$${parseFloat(baseSalary).toLocaleString()}` : '❌ Error'}
                             </td>
-                            <td className="p-4 font-bold text-sky-400 font-mono">
+                            <td className="p-3 sm:p-4 font-bold text-sky-400 font-mono whitespace-nowrap">
                               {typeof row.Converted_Salary === 'number'
                                 ? `${row.Converted_Salary.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${targetCurrency}`
                                 : targetCurrency === 'USD' && baseSalary ? `$${parseFloat(baseSalary).toLocaleString()}` : '—'}
@@ -496,49 +493,49 @@ export default function BatchPredictPage() {
               </div>
 
               {/* Currency Converter Controller Block Area */}
-              <div className="glass-panel rounded-3xl p-6 border border-white/10 text-white">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="flex-1">
-                    <label className="block text-sm font-semibold text-slate-300 mb-2">Map Evaluation Target Currency</label>
+              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/10 text-white w-full">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div className="w-full md:flex-1">
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2">Map Evaluation Target Currency</label>
                     <select
                       value={targetCurrency}
                       onChange={(e) => setTargetCurrency(e.target.value)}
-                      className="w-full sm:w-64 bg-slate-900 border border-white/10 text-white rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 backdrop-blur-sm"
+                      className="w-full sm:w-64 bg-slate-900 border border-white/10 text-white rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 backdrop-blur-sm"
                     >
                       {Object.entries(supportedCurrencies).map(([code, name]) => (
                         <option key={code} value={code}>{code} - {name}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto sm:shrink-0">
                     <button
                       onClick={handleBatchConvert}
                       disabled={conversionLoading}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50 flex items-center gap-2 shadow-md shadow-emerald-600/10"
+                      className="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl transition disabled:opacity-50 flex items-center gap-2 shadow-md shadow-emerald-600/10"
                     >
                       {conversionLoading ? "Transforming Vector Matrix..." : "Convert Complete Batch"}
                     </button>
                     <button
                       onClick={() => { setConvertedResults(null); setTargetCurrency('USD'); }}
                       disabled={!convertedResults}
-                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-30"
+                      className="w-full sm:w-auto justify-center bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl transition disabled:opacity-30"
                     >
                       Reset Base view
                     </button>
                   </div>
                 </div>
                 {conversionError && (
-                  <div className="mt-3 text-sm text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3">{conversionError}</div>
+                  <div className="mt-3 text-xs sm:text-sm text-red-400 bg-red-950/30 border border-red-900/40 rounded-xl p-3">{conversionError}</div>
                 )}
               </div>
             </div>
           )}
 
-          <div className="animate-float-delay-2 mt-12 text-center">
-            <div className="inline-flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm font-medium">
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full text-gray-300">Template: country, education, experience</span>
-              <span className="text-zinc-800">•</span>
-              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-4 py-2 rounded-full text-gray-300">Process up to 1000 rows</span>
+          <div className="animate-float-delay-2 mt-8 sm:mt-12 text-center px-4">
+            <div className="inline-flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs text-slate-300 font-medium w-full">
+              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm">Template: country, education, experience</span>
+              <span className="text-zinc-800 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5 bg-white/5 border border-white/5 backdrop-blur-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm">Process up to 1000 rows</span>
             </div>
           </div>
         </main>

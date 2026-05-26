@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 export default function CustomCursor() {
   const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
@@ -14,6 +15,7 @@ export default function CustomCursor() {
   useEffect(() => {
     // Robust detection for interactive elements across the entire dashboard
     const isInteractive = (target) => {
+      if (!target) return false;
       return (
         target.tagName === 'A' ||
         target.tagName === 'BUTTON' ||
@@ -26,24 +28,59 @@ export default function CustomCursor() {
         target.closest('input') ||
         target.closest('label') ||
         target.closest('[role="button"]') ||
-        target.getAttribute('role') === 'button'
+        target.getAttribute?.('role') === 'button'
       );
     };
 
     const moveCursor = (e) => {
+      // Reveal the cursor cleanly once actual fine pointer movement begins
+      if (!isVisible) setIsVisible(true);
+      
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
       setIsHovered(!!isInteractive(e.target));
     };
 
+    const handleMouseLeaveWindow = () => {
+      setIsVisible(false);
+    };
+
+    const handleMouseEnterWindow = () => {
+      setIsVisible(true);
+    };
+
+    // Initialize triggers only when a valid system pointer device is tracked
     window.addEventListener('mousemove', moveCursor);
-    return () => window.removeEventListener('mousemove', moveCursor);
-  }, [mouseX, mouseY]);
+    document.addEventListener('mouseleave', handleMouseLeaveWindow);
+    document.addEventListener('mouseenter', handleMouseEnterWindow);
+
+    return () => {
+      window.removeEventListener('mousemove', moveCursor);
+      document.removeEventListener('mouseleave', handleMouseLeaveWindow);
+      document.removeEventListener('mouseenter', handleMouseEnterWindow);
+    };
+  }, [mouseX, mouseY, isVisible]);
+
+  // Ensure absolutely no markup rendering footprint occurs on non-desktop touch screens
+  if (!isVisible) {
+    return (
+      <style>{`
+        @media (max-width: 1023px), (pointer: coarse) {
+          *, html, body, a, button, select, input, label {
+            cursor: auto !important;
+          }
+          .recharts-wrapper, .recharts-surface, .recharts-wrapper *, .recharts-tooltip-wrapper, .recharts-active-dot {
+            cursor: auto !important;
+          }
+        }
+      `}</style>
+    );
+  }
 
   return (
     <div className="hidden lg:block pointer-events-none fixed inset-0 z-[9999]">
       <style>{`
-        /* CRITICAL CSS FIX: Override native cursors for global custom cursor support */
+        /* CRITICAL CSS FIX: Override native cursors for global custom cursor support only on fine hover viewports */
         @media (hover:hover) and (pointer:fine) {
           *, html, body, a, button, select, input, label {
             cursor: none !important;
@@ -56,6 +93,16 @@ export default function CustomCursor() {
           .recharts-tooltip-wrapper,
           .recharts-active-dot {
             cursor: none !important;
+          }
+        }
+
+        /* Safe fallback for touch screens to completely restore input fields controls natively */
+        @media (max-width: 1023px), (pointer: coarse) {
+          *, html, body, a, button, select, input, label {
+            cursor: auto !important;
+          }
+          .recharts-wrapper, .recharts-surface, .recharts-wrapper *, .recharts-tooltip-wrapper, .recharts-active-dot {
+            cursor: auto !important;
           }
         }
 

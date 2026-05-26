@@ -95,7 +95,7 @@ function NeuralCanvas() {
       });
     }
 
-    const CONNECT_DIST = window.innerWidth < 768 ? 120 : 170;
+    const CONNECT_DIST = window.innerWidth < 768 ? 100 : 170;
     const PRIMARY_HSL = "199, 100%, 65%"; 
     const ACCENT_HSL = "260, 90%, 70%";   
 
@@ -296,7 +296,7 @@ export default function ExplorePage() {
   const [modalChartId, setModalChartId] = useState(null);
   const abortControllerRef = useRef(null);
 
-  const axisLabelConfig = { fill: '#f8fafc', fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)' };
+  const axisLabelConfig = { fill: '#f8fafc', fontSize: window.innerWidth < 640 ? 10 : 12, fontWeight: 600, fontFamily: 'var(--font-body)' };
   const gridConfig = { stroke: '#475569', strokeDasharray: '4 4', opacity: 0.6 };
   const tooltipBaseStyle = {
     backgroundColor: '#0f172a',
@@ -474,7 +474,6 @@ export default function ExplorePage() {
       .slice(0, 8);
   }, [analytics]);
 
-  // FIX: Fixed item text parsing normalizers using native Math.round(Number(...)) JS standards
   const stackedEducationData = useMemo(() => {
     const rawList = analytics?.education_salary_by_country || [];
     if (!rawList.length) return [];
@@ -483,15 +482,11 @@ export default function ExplorePage() {
     rawList.forEach((item) => {
       if (!item) return;
       
-      // Separate extraction pipelines for country name vs education domain text
       const ctry = item.country || item.Country;
       const eduLevel = item.education || item.EdLevel;
       const salary = item.mean_salary || item.salary || item.Predicted_Salary_USD || 0;
       
-      // If either element is blank, we can safely jump out of this specific loop turn
       if (!ctry || !eduLevel) return;
-      
-      // Skip if this row doesn't match selected side filter values
       if (!selectedCountries.includes(ctry) || !selectedEducationLevels.includes(eduLevel)) return;
       
       if (!grouped[ctry]) {
@@ -504,7 +499,7 @@ export default function ExplorePage() {
   }, [analytics, selectedCountries, selectedEducationLevels]);
 
   const renderChartContent = (chartId, isModal = false) => {
-    const commonProps = { width: '100%', height: isModal ? '100%' : 320 };
+    const commonProps = { width: '100%', height: isModal ? '100%' : 325 };
     switch (chartId) {
       case 'meanSalaryByCountry':
         const barData = analytics?.mean_salary_by_country?.map(item => ({
@@ -513,7 +508,7 @@ export default function ExplorePage() {
         })) || [];
         return barData.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={barData}>
+            <BarChart data={barData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="category" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -521,11 +516,11 @@ export default function ExplorePage() {
               <Bar dataKey="mean_salary" fill="#38bdf8" radius={[10, 10, 0, 0]} maxBarSize={60} />
             </BarChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'salaryVsExperience':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <LineChart data={filteredExperiencePoints}>
+            <LineChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -533,25 +528,25 @@ export default function ExplorePage() {
               <Line type="monotone" dataKey="mean_salary" stroke="#38bdf8" strokeWidth={4} activeDot={{ r: 8, strokeWidth: 0 }} dot={{ r: 4, strokeWidth: 0, fill: '#60a5fa' }} name="Mean Salary" />
             </LineChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'educationPie':
         return educationPieData.length ? (
           <ResponsiveContainer {...commonProps}>
             <PieChart>
-              <Pie data={educationPieData} dataKey="mean_salary" nameKey="category" innerRadius={55} outerRadius={95} paddingAngle={3}>
+              <Pie data={educationPieData} dataKey="mean_salary" nameKey="category" innerRadius={window.innerWidth < 640 ? 45 : 55} outerRadius={window.innerWidth < 640 ? 75 : 95} paddingAngle={3}>
                 {educationPieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} stroke="#0f172a" strokeWidth={2} />
                 ))}
               </Pie>
               <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
-              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={12} />
+              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-[11px] sm:text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={10} />
             </PieChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'salaryGrowthArea':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={filteredExperiencePoints}>
+            <AreaChart data={filteredExperiencePoints} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
@@ -559,76 +554,75 @@ export default function ExplorePage() {
               <Area type="monotone" dataKey="mean_salary" fill="#1d4ed8" stroke="#60a5fa" strokeWidth={3} fillOpacity={0.45} name="Growth Vector" />
             </AreaChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'countryDonut':
         return countryDistribution.length ? (
           <ResponsiveContainer {...commonProps}>
             <PieChart>
-              <Pie data={countryDistribution} dataKey="count" nameKey="country" innerRadius={55} outerRadius={95} paddingAngle={2}>
+              <Pie data={countryDistribution} dataKey="count" nameKey="country" innerRadius={window.innerWidth < 640 ? 45 : 55} outerRadius={window.innerWidth < 640 ? 75 : 95} paddingAngle={2}>
                 {countryDistribution.map((entry, index) => (
                   <Cell key={`cell-donut-${index}`} fill={chartColors[index % chartColors.length]} stroke="#0f172a" strokeWidth={2} />
                 ))}
               </Pie>
               <Tooltip formatter={(value) => formatNumber(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
-              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={12} />
+              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-[11px] sm:text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={10} />
             </PieChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'topPayingCountries':
         return topPayingCountries.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={topPayingCountries} layout="vertical">
+            <BarChart data={topPayingCountries} layout="vertical" margin={{ top: 10, right: 15, left: -10, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} />
-              <YAxis dataKey="category" type="category" width={110} tick={axisLabelConfig} stroke="#f8fafc" />
+              <YAxis dataKey="category" type="category" width={window.innerWidth < 640 ? 70 : 100} tick={axisLabelConfig} stroke="#f8fafc" />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
               <Bar dataKey="mean_salary" fill="#fb923c" radius={[0, 8, 8, 0]} maxBarSize={30} />
             </BarChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'stackedEducationByCountry':
         return stackedEducationData.length ? (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={stackedEducationData}>
+            <BarChart data={stackedEducationData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="country" tick={axisLabelConfig} />
               <YAxis tick={axisLabelConfig} tickFormatter={(val) => `$${val / 1000}k`} />
               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.08)' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
-              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={12} />
-              {/* Dynamic bar node generator using values tracked inside sidebar toggle list */}
+              <Legend formatter={(value) => <span className="text-slate-100 font-semibold text-[11px] sm:text-xs">{value}</span>} layout="horizontal" verticalAlign="bottom" align="center" iconSize={10} />
               {allEducationLevels.filter(lvl => selectedEducationLevels.includes(lvl)).map((level, idx) => (
                 <Bar key={level} dataKey={level} stackId="a" fill={chartColors[idx % chartColors.length]} />
               ))}
             </BarChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       case 'experienceScatter':
         return filteredExperiencePoints.length ? (
           <ResponsiveContainer {...commonProps}>
-            <ScatterChart>
+            <ScatterChart margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
               <CartesianGrid {...gridConfig} />
               <XAxis dataKey="experience" type="number" tick={axisLabelConfig} stroke="#f8fafc" name="Experience" unit="yrs" />
               <YAxis dataKey="mean_salary" type="number" tick={axisLabelConfig} stroke="#f8fafc" tickFormatter={(val) => `$${val / 1000}k`} name="Salary" />
               <Tooltip cursor={{ strokeDasharray: '3 3', stroke: '#38bdf8' }} formatter={(value) => formatCurrency(value)} contentStyle={tooltipBaseStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
-              <Scatter data={filteredExperiencePoints} fill="#2dd4bf" line={false} shape="circle" r={6} />
+              <Scatter data={filteredExperiencePoints} fill="#2dd4bf" line={false} shape="circle" r={window.innerWidth < 640 ? 4 : 6} />
             </ScatterChart>
           </ResponsiveContainer>
-        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold">No data available</div>;
+        ) : <div className="flex items-center justify-center h-full text-slate-400 font-semibold text-xs">No data available</div>;
       default:
         return null;
     }
   };
 
   const renderChartHeader = (title, description, chartId) => (
-    <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-      <div>
-        <h3 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{title}</h3>
-        <p className="text-sm text-slate-300">{description}</p>
+    <div className="mb-2 flex items-start justify-between gap-2 w-full">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight truncate" style={{ fontFamily: "var(--font-display)" }}>{title}</h3>
+        <p className="text-xs sm:text-sm text-slate-300 truncate">{description}</p>
       </div>
       <button
         type="button"
         onClick={() => openModal(chartId)}
-        className="rounded-full border border-zinc-700 bg-zinc-900/60 backdrop-blur-sm px-3 py-1 text-xs font-bold text-gray-200 hover:bg-zinc-800 hover:text-white transition shadow-sm"
+        className="rounded-full border border-zinc-700 bg-zinc-900/60 backdrop-blur-sm px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-bold text-gray-200 hover:bg-zinc-800 hover:text-white transition shadow-sm shrink-0"
       >
         Max
       </button>
@@ -663,19 +657,13 @@ export default function ExplorePage() {
         }
 
         @keyframes float-in {
-          from { opacity: 0; transform: translateY(28px); }
+          from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-float {
-          animation: float-in 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) both;
-        }
-        .animate-float-delay {
-          animation: float-in 0.7s 0.15s both;
-        }
-        .animate-float-delay-2 {
-          animation: float-in 0.7s 0.3s both;
-        }
+        .animate-float { animation: float-in 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1) both; }
+        .animate-float-delay { animation: float-in 0.7s 0.15s both; }
+        .animate-float-delay-2 { animation: float-in 0.7s 0.3s both; }
 
         .glass-panel {
           background: rgba(10, 15, 30, 0.45);
@@ -685,189 +673,193 @@ export default function ExplorePage() {
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
         }
 
-        .card-hover {
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
+        .card-hover { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
         @media (pointer: fine) {
           .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
           }
         }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.01); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
+      <div className="min-h-screen bg-gradient-to-b from-[#03060f] via-[#050b1a] to-[#070e24] flex flex-col items-center justify-start p-4 sm:p-6 md:p-12 font-sans overflow-x-hidden relative">
         <NeuralCanvas />
 
-        <div className="w-full max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-10">
-            <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-5 py-2 border border-sky-500/20 shadow-sm mb-6">
-              <span className="relative flex h-2.5 w-2.5">
+        <div className="w-full max-w-7xl mx-auto relative z-10 py-4 sm:py-0">
+          <div className="text-center mb-8 sm:mb-10">
+            <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-4 py-1.5 sm:px-5 sm:py-2 border border-sky-500/20 shadow-sm mb-4 sm:mb-6">
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-sky-500"></span>
               </span>
-              <span className="text-sm font-semibold text-sky-400 tracking-wide">Data Insights</span>
+              <span className="text-xs sm:text-sm font-semibold text-sky-400 tracking-wide">Data Insights</span>
             </div>
-            <h1 className="animate-float text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
+            <h1 className="animate-float text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3 sm:mb-4 px-2" style={{ fontFamily: "var(--font-display)", lineHeight: 1.2 }}>
               Salary Trends & {' '}
               <span className="bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">
                 Workforce Insights
               </span>
             </h1>
-            <p className="animate-float-delay text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="animate-float-delay text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed px-4 sm:px-0">
               Explore salary analytics interactively using country, education, and experience filters.
             </p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-            <section className="space-y-6">
-              <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover">
-                <h2 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters</h2>
+          <div className="grid gap-6 xl:grid-cols-[300px_1fr] items-start w-full max-w-[340px] sm:max-w-full mx-auto">
+            {/* Filter Sidebar Panel Layer */}
+            <section className="space-y-6 w-full">
+              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm card-hover">
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Filters</h2>
 
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
-                    <h3 className="text-sm font-bold text-slate-200">Countries</h3>
-                    <button onClick={handleSelectAllCountries} className="text-[11px] px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide">Select All</button>
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-2.5 gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Countries</h3>
+                    <button onClick={handleSelectAllCountries} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
                   </div>
                   <input
                     type="search"
                     value={countrySearch}
                     onChange={(e) => setCountrySearch(e.target.value)}
                     placeholder="Search country"
-                    className="w-full border border-zinc-800 rounded-2xl px-4 py-2 text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                  <div className="max-h-64 overflow-y-auto mt-3 border border-zinc-800/60 rounded-3xl p-3 bg-zinc-950/40 backdrop-blur-sm select-none">
+                  <div className="max-h-48 sm:max-h-64 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
                     {visibleCountries.map((country) => (
-                      <label key={country} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition cursor-pointer">
-                        <input type="checkbox" className="accent-sky-500 scale-110" checked={selectedCountries.includes(country)} onChange={() => handleCountryToggle(country)} />
-                        <span className="text-sm font-medium text-gray-200">{country}</span>
+                      <label key={country} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
+                        <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedCountries.includes(country)} onChange={() => handleCountryToggle(country)} />
+                        <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{country}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
-                    <h3 className="text-sm font-bold text-slate-200">Education</h3>
-                    <button onClick={handleSelectAllEducation} className="text-[11px] px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide">Select All</button>
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-2.5 gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Education</h3>
+                    <button onClick={handleSelectAllEducation} className="text-[10px] sm:text-[11px] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/20 transition font-bold uppercase tracking-wide shrink-0">Select All</button>
                   </div>
                   <input
                     type="search"
                     value={educationSearch}
                     onChange={(e) => setEducationSearch(e.target.value)}
                     placeholder="Search education"
-                    className="w-full border border-zinc-800 rounded-2xl px-4 py-2 text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full border border-zinc-800 rounded-xl sm:rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-zinc-950/50 text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                  <div className="max-h-52 overflow-y-auto mt-3 border border-zinc-800/60 rounded-3xl p-3 bg-zinc-950/40 backdrop-blur-sm select-none">
+                  <div className="max-h-40 sm:max-h-52 overflow-y-auto mt-2.5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-zinc-950/40 backdrop-blur-sm select-none custom-scrollbar pr-1">
                     {visibleEducationLevels.map((education) => (
-                      <label key={education} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition cursor-pointer">
-                        <input type="checkbox" className="accent-sky-500 scale-110" checked={selectedEducationLevels.includes(education)} onChange={() => handleEducationToggle(education)} />
-                        <span className="text-sm font-medium text-gray-200">{education}</span>
+                      <label key={education} className="flex items-center gap-2.5 p-1.5 sm:p-2 rounded-lg hover:bg-white/5 transition cursor-pointer">
+                        <input type="checkbox" className="accent-sky-500 scale-100 sm:scale-110 shrink-0" checked={selectedEducationLevels.includes(education)} onChange={() => handleEducationToggle(education)} />
+                        <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{education}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-6 border border-zinc-800/60 rounded-3xl p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold text-slate-200">Experience Range</h3>
-                    <span className="text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-1 rounded-full">{experienceRange[0]} - {experienceRange[1]} yrs</span>
+                <div className="mt-5 border border-zinc-800/60 rounded-2xl sm:rounded-3xl p-3 sm:p-4 bg-zinc-950/40 backdrop-blur-sm select-none">
+                  <div className="flex justify-between items-center gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-200">Experience Range</h3>
+                    <span className="text-[10px] sm:text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full shrink-0">{experienceRange[0]} - {experienceRange[1]} yrs</span>
                   </div>
-                  <div className="mt-4">
-                    <label className="text-sm font-semibold text-slate-300">Minimum Experience</label>
-                    <input type="range" min={0} max={50} value={experienceRange[0]} onChange={(e) => setExperienceRange([Math.min(Number(e.target.value), experienceRange[1]), experienceRange[1]])} className="w-full mt-2 accent-sky-500" />
+                  <div className="mt-3.5">
+                    <label className="text-xs sm:text-sm font-semibold text-slate-300">Minimum Experience</label>
+                    <input type="range" min={0} max={50} value={experienceRange[0]} onChange={(e) => setExperienceRange([Math.min(Number(e.target.value), experienceRange[1]), experienceRange[1]])} className="w-full mt-1.5 accent-sky-500 h-1" />
                   </div>
-                  <div className="mt-4">
-                    <label className="text-sm font-semibold text-slate-300">Maximum Experience</label>
-                    <input type="range" min={0} max={50} value={experienceRange[1]} onChange={(e) => setExperienceRange([experienceRange[0], Math.max(Number(e.target.value), experienceRange[0])])} className="w-full mt-2 accent-sky-500" />
+                  <div className="mt-3.5">
+                    <label className="text-xs sm:text-sm font-semibold text-slate-300">Maximum Experience</label>
+                    <input type="range" min={0} max={50} value={experienceRange[1]} onChange={(e) => setExperienceRange([experienceRange[0], Math.max(Number(e.target.value), experienceRange[0])])} className="w-full mt-1.5 accent-sky-500 h-1" />
                   </div>
                 </div>
               </div>
 
-              <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover select-none">
-                <h2 className="text-lg font-bold text-white mb-4 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Chart Visibility</h2>
-                <div className="space-y-3">
+              <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm card-hover select-none">
+                <h2 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Chart Visibility</h2>
+                <div className="space-y-2 max-h-48 sm:max-h-none overflow-y-auto custom-scrollbar pr-1">
                   {chartSections.map((section) => (
-                    <label key={section.id} className="flex items-center gap-3 bg-zinc-950/40 backdrop-blur-sm border border-zinc-800/60 rounded-2xl px-4 py-3 hover:bg-white/5 transition cursor-pointer">
-                      <input type="checkbox" className="accent-sky-500" checked={chartVisibility[section.id]} onChange={() => setChartVisibility((prev) => ({ ...prev, [section.id]: !prev[section.id] }))} />
-                      <span className="text-sm font-medium text-gray-200">{section.label}</span>
+                    <label key={section.id} className="flex items-center gap-2.5 bg-zinc-950/40 backdrop-blur-sm border border-zinc-800/60 rounded-xl px-3.5 py-2.5 sm:py-3 hover:bg-white/5 transition cursor-pointer">
+                      <input type="checkbox" className="accent-sky-500 shrink-0" checked={chartVisibility[section.id]} onChange={() => setChartVisibility((prev) => ({ ...prev, [section.id]: !prev[section.id] }))} />
+                      <span className="text-xs sm:text-sm font-medium text-gray-200 truncate">{section.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
             </section>
 
-            <section className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
-                  <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(45px)' }} />
-                  <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
-                    <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
-                      <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Average Salary</p>
-                      <p className="text-3xl font-extrabold mt-2 tracking-tight text-white">{formatCurrency(avgSalary)}</p>
+            {/* Analytics Content Graphs Matrix Area Layout */}
+            <section className="space-y-6 w-full min-w-0">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
+                  <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
+                    <div className="w-full p-4.5 sm:p-6 flex flex-col justify-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
+                      <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate">Average Salary</p>
+                      <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white">{formatCurrency(avgSalary)}</p>
                     </div>
                   </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
-                  <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(45px)' }} />
-                  <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
-                    <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
-                      <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Highest Salary</p>
-                      <p className="text-3xl font-extrabold mt-2 tracking-tight text-white">{formatCurrency(highestSalary)}</p>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
+                  <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(35px)' }} />
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
+                    <div className="w-full p-4.5 sm:p-6 flex flex-col justify-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
+                      <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate">Highest Salary</p>
+                      <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white">{formatCurrency(highestSalary)}</p>
                     </div>
                   </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
-                  <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(45px)' }} />
-                  <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
-                    <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
-                      <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Lowest Salary</p>
-                      <p className="text-3xl font-extrabold mt-2 tracking-tight text-white">{formatCurrency(lowestSalary)}</p>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
+                  <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(35px)' }} />
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
+                    <div className="w-full p-4.5 sm:p-6 flex flex-col justify-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
+                      <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate">Lowest Salary</p>
+                      <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white">{formatCurrency(lowestSalary)}</p>
                     </div>
                   </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
-                  <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%)', filter: 'blur(45px)' }} />
-                  <div className="self-stretch rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%) border-box' }}>
-                    <div className="w-full h-full p-6 flex flex-col justify-between backdrop-blur-md">
-                      <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Total Records</p>
-                      <p className="text-3xl font-extrabold mt-2 tracking-tight text-white">{formatNumber(totalRecords)}</p>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
+                  <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%)', filter: 'blur(35px)' }} />
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%) border-box' }}>
+                    <div className="w-full p-4.5 sm:p-6 flex flex-col justify-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
+                      <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate">Total Records</p>
+                      <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white">{formatNumber(totalRecords)}</p>
                     </div>
                   </div>
                 </motion.div>
               </div>
 
               {showNoCountryMessage && (
-                <div className="rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-16 text-center animate-float">
-                  <p className="text-2xl font-bold text-white">Please click F5 or refresh the page.</p>
+                <div className="rounded-[24px] sm:rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-10 sm:p-16 text-center animate-float w-full">
+                  <p className="text-xl sm:text-2xl font-bold text-white">Please click F5 or refresh the page.</p>
                 </div>
               )}
 
               {showEmptyEducationMessage && !showNoCountryMessage && (
-                <div className="rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-16 text-center animate-float">
-                  <p className="text-2xl font-bold text-white">Select at least one education level</p>
-                  <p className="mt-2 text-slate-300">Choose education levels from the left sidebar to see data.</p>
+                <div className="rounded-[24px] sm:rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 backdrop-blur-md p-10 sm:p-16 text-center animate-float w-full">
+                  <p className="text-xl sm:text-2xl font-bold text-white">Select at least one education level</p>
+                  <p className="mt-1.5 text-xs sm:text-sm text-slate-300">Choose education levels from the left sidebar to see data.</p>
                 </div>
               )}
 
               {loading && !showNoCountryMessage && !showEmptyEducationMessage && (
-                <div className="glass-panel rounded-[40px] p-16 text-center">
-                  <div className="animate-spin h-10 w-10 border-b-2 border-sky-500 rounded-full mx-auto"></div>
-                  <p className="mt-4 text-slate-300">Loading analytics...</p>
+                <div className="glass-panel rounded-[24px] sm:rounded-[40px] p-12 sm:p-16 text-center w-full">
+                  <div className="animate-spin h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-sky-500 rounded-full mx-auto"></div>
+                  <p className="mt-4 text-xs sm:text-sm text-slate-300">Loading analytics...</p>
                 </div>
               )}
 
               {error && !loading && !showNoCountryMessage && !showEmptyEducationMessage && (
-                <div className="bg-red-950/30 border border-red-900/40 text-red-400 rounded-2xl p-4 backdrop-blur-sm">
+                <div className="bg-red-950/30 border border-red-900/40 text-red-400 text-xs sm:text-sm rounded-xl sm:rounded-2xl p-4 backdrop-blur-sm w-full">
                   {error}
                 </div>
               )}
 
               {!loading && !showNoCountryMessage && !showEmptyEducationMessage && !error && analytics && (
-                <div className="grid gap-6 xl:grid-cols-2">
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full">
                   {chartSections.map((section, idx) => {
                     if (!chartVisibility[section.id]) return null;
                     
@@ -881,11 +873,11 @@ export default function ExplorePage() {
 
                     return (
                       <div key={section.id} className="relative flex flex-col justify-start items-start w-full group mx-auto">
-                        <div className="absolute w-full h-full opacity-35 rounded-[40px] pointer-events-none" style={{ background: activeGlow, filter: 'blur(45px)' }} />
-                        <div className="self-stretch rounded-[40px] z-10 overflow-hidden w-full card-hover" style={{ border: '8px solid transparent', background: `linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, ${activeGlow} border-box` }}>
-                          <div className="w-full h-full p-5 flex flex-col justify-between backdrop-blur-md">
+                        <div className="absolute w-full h-full opacity-25 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: activeGlow, filter: 'blur(45px)' }} />
+                        <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden w-full card-hover" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: `linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, ${activeGlow} border-box` }}>
+                          <div className="w-full h-full p-4 sm:p-5 flex flex-col justify-between backdrop-blur-md">
                             {renderChartHeader(section.label, `Insights for ${section.label}`, section.id)}
-                            <div className="h-[320px] w-full mt-4">
+                            <div className="h-[325px] w-full mt-3 sm:mt-4 relative overflow-hidden">
                               {renderChartContent(section.id, false)}
                             </div>
                           </div>
@@ -898,21 +890,21 @@ export default function ExplorePage() {
             </section>
           </div>
 
-          {/* Modal Focus Overlay */}
+          {/* Modal Focus Overlay Block Layer */}
           {modalChartId !== null && (
-            <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-md transition-all duration-300" onClick={closeModal}>
-              <div className="relative bg-zinc-950/95 backdrop-blur-lg rounded-[40px] shadow-2xl w-[90vw] h-[85vh] p-6 flex flex-col border border-zinc-800/60" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
+            <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 transition-all duration-300" onClick={closeModal}>
+              <div className="relative bg-zinc-950/95 backdrop-blur-lg rounded-[28px] sm:rounded-[40px] shadow-2xl w-full max-w-5xl h-[75vh] sm:h-[85vh] p-4 sm:p-6 flex flex-col border border-zinc-800/60" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4 gap-4">
+                  <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight truncate" style={{ fontFamily: "var(--font-display)" }}>
                     {chartSections.find(s => s.id === modalChartId)?.label || 'Chart'}
                   </h2>
-                  <button onClick={closeModal} className="rounded-full p-2 hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 hover:text-white transition">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button onClick={closeModal} className="rounded-full p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 text-slate-400 hover:text-white transition shrink-0">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                <div className="flex-1 w-full min-h-0">
+                <div className="flex-1 w-full min-h-0 relative overflow-hidden">
                   {renderChartContent(modalChartId, true)}
                 </div>
               </div>

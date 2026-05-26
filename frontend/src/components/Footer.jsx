@@ -25,13 +25,13 @@ export default function Footer() {
       `}</style>
 
       {/* Footer styled to match the cyber-navy gradient and glassmorphism UI */}
-      <footer className="mt-16 footer-glass rounded-t-[40px] animate-float-footer text-slate-300 relative z-10 w-full">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+      <footer className="mt-12 sm:mt-16 footer-glass rounded-t-[28px] sm:rounded-t-[40px] animate-float-footer text-slate-300 relative z-10 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col items-center justify-between gap-3 sm:gap-4 text-center sm:flex-row sm:text-left">
             
             {/* Left side - Copyright */}
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-300 max-w-[280px] sm:max-w-none">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="font-medium" style={{ fontFamily: "var(--font-body, 'Manrope', sans-serif)" }}>
@@ -40,8 +40,8 @@ export default function Footer() {
             </div>
 
             {/* Right side - Attribution */}
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-300 max-w-[280px] sm:max-w-none">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span className="font-medium" style={{ fontFamily: "var(--font-body, 'Manrope', sans-serif)" }}>

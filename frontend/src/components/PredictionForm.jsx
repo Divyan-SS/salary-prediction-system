@@ -1,4 +1,4 @@
-//frontend/src/components/PredictionForm.jsx
+// frontend/src/components/PredictionForm.jsx
 import { useState } from 'react';
 import { predictSalary } from '../services/api';
 import ResultCard from './ResultCard';
@@ -70,14 +70,14 @@ export default function PredictionForm() {
         }
       `}</style>
 
-      <div className="space-y-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           <div className="animate-fade-slide">
-            <label className="block text-sm font-semibold text-slate-300 mb-2">Country</label>
+            <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2">Country</label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full input-glass rounded-2xl px-4 py-3 text-white focus:outline-none transition-all"
+              className="w-full input-glass rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none transition-all"
             >
               {countries.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -86,14 +86,14 @@ export default function PredictionForm() {
           </div>
 
           <div className="animate-fade-slide" style={{ animationDelay: "0.05s" }}>
-            <label className="block text-sm font-semibold text-slate-300 mb-3">Education Level</label>
-            <div className="grid grid-cols-2 gap-3">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2.5 sm:mb-3">Education Level</label>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {['Undergraduate', 'Postgraduate'].map((level) => (
                 <button
                   key={level}
                   type="button"
                   onClick={() => setUiEducation(level)}
-                  className={`py-3 rounded-2xl text-sm font-semibold transition-all border ${
+                  className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all border ${
                     uiEducation === level 
                       ? 'bg-sky-500/20 border-sky-500 text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.2)]' 
                       : 'bg-zinc-900/40 border-zinc-800 text-gray-400 hover:bg-zinc-800/50'
@@ -106,18 +106,18 @@ export default function PredictionForm() {
           </div>
 
           <div className="animate-fade-slide" style={{ animationDelay: "0.1s" }}>
-            <div className="flex justify-between mb-2">
-              <label className="text-sm font-semibold text-slate-300">Years of Experience</label>
-              <span className="text-sm font-bold text-sky-400">{experience} years</span>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-xs sm:text-sm font-semibold text-slate-300">Years of Experience</label>
+              <span className="text-xs sm:text-sm font-bold text-sky-400 font-mono">{experience} years</span>
             </div>
-            <div className="w-full bg-zinc-900/20 border border-white/5 rounded-2xl p-4 flex items-center">
+            <div className="w-full bg-zinc-900/20 border border-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center">
               <input
                 type="range"
                 min="0"
                 max="50"
                 value={experience}
                 onChange={(e) => setExperience(parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-sky-500 focus:outline-none"
+                className="w-full h-1.5 sm:h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-sky-500 focus:outline-none"
               />
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function PredictionForm() {
           <button
             type="submit"
             disabled={loading}
-            className="animate-fade-slide w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.4)] disabled:opacity-50"
+            className="animate-fade-slide w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.4)] disabled:opacity-50 active:scale-[0.99]"
             style={{ animationDelay: "0.15s" }}
           >
             {loading ? "Calculating..." : "Predict Salary"}
@@ -135,13 +135,14 @@ export default function PredictionForm() {
         {loading && <LoadingSpinner />}
 
         {error && (
-          <div className="bg-red-950/40 border border-red-900/60 rounded-2xl p-4 text-red-400 text-sm animate-fade-slide">
+          <div className="bg-red-950/40 border border-red-900/60 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 text-red-400 text-xs sm:text-sm animate-fade-slide flex items-start gap-2 break-words">
+            <span className="shrink-0">⚠️</span>
             <span>{error}</span>
           </div>
         )}
 
         {prediction && !loading && (
-          <div className="animate-fade-slide" style={{ animationDelay: "0.2s" }}>
+          <div className="animate-fade-slide w-full" style={{ animationDelay: "0.2s" }}>
             <ResultCard prediction={prediction} />
           </div>
         )}
