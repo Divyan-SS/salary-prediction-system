@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, validator
-from typing import List, Dict
+from typing import List, Dict, Optional
+
 
 class CurrencyRates(BaseModel):
     rates: Dict[str, float]
@@ -15,6 +16,8 @@ class PredictionRequest(BaseModel):
     country: str
     education: str
     experience: float = Field(..., ge=0, le=50, description="Years of experience (0-50)")
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
 
     @validator('education')
     def validate_education(cls, v):
@@ -27,6 +30,8 @@ class PredictionResponse(BaseModel):
     predicted_salary: float
     predicted_salary_usd: float
     currency: str
+    prediction_id: Optional[str] = None
+
 
 class SalaryDataPoint(BaseModel):
     category: str

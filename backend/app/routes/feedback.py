@@ -1,8 +1,12 @@
 import re
+import asyncio
+import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.schemas.feedback_schema import FeedbackRequest
+from app.services.state_store import state_store, InMemoryStateStore
 from app.services.email_service import send_admin_feedback_email, send_user_thank_you_email
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Feedback"])
 
 # Simple, strict email validation regex
@@ -13,6 +17,65 @@ def is_valid_email(email: str) -> bool:
         return False
     return bool(EMAIL_REGEX.match(email.strip()))
 
+# =========================================================
+# 🔄 PERIODIC TIMEOUT SWEEPER (CASE B)
+# =========================================================
+async def feedback_timeout_sweeper():
+    """
+    Background loop checking for expired pending feedback entries in InMemoryStateStore.
+    Runs every 10 seconds.
+    """
+    # Import email services locally to avoid circular import issues
+    from app.services.email_service import send_admin_feedback_email, send_user_follow_up_email
+    
+    logger.info("Feedback timeout sweeper background loop started.")
+    while True:
+        try:
+            await asyncio.sleep(10)
+            
+            # Sweeper is ONLY executed in InMemory mode.
+            # Redis mode handles key expiration via Redis native TTL rules automatically.
+            if isinstance(state_store, InMemoryStateStore):
+                expired_entries = state_store.scan_expired()
+                for prediction_id, payload in expired_entries:
+                    user_email = payload.get("user_email")
+                    user_name = payload.get("user_name")
+                    pred_data = payload.get("prediction_data", {})
+                    
+                    logger.info(f"Sweeper processing timeout event for prediction {prediction_id}")
+                    
+                    # 1. Dispatch Admin Notification ("User did not respond")
+                    send_admin_feedback_email(
+                        prediction_id=prediction_id,
+                        country=pred_data.get("country"),
+                        education=pred_data.get("education"),
+                        experience=pred_data.get("experience"),
+                        predicted_salary_usd=pred_data.get("predicted_salary_usd"),
+                        timeout_event=True,
+                        user_email=user_email,
+                        user_name=user_name
+                    )
+                    
+                    # 2. Dispatch User Follow-Up Email (if valid email is provided)
+                    if user_email and is_valid_email(user_email):
+                        send_user_follow_up_email(
+                            user_email=user_email,
+                            user_name=user_name
+                        )
+                        
+        except asyncio.CancelledError:
+            logger.info("Feedback timeout sweeper task cancelled.")
+            break
+        except Exception as e:
+            logger.error(f"Error in feedback timeout sweeper loop: {str(e)}")
+
+@router.on_event("startup")
+async def startup_event():
+    asyncio.create_task(feedback_timeout_sweeper())
+
+# =========================================================
+# 📥 FEEDBACK SUBMISSION ENDPOINT (CASE A)
+# =========================================================
 @router.post("/feedback")
 async def submit_feedback(request: FeedbackRequest, background_tasks: BackgroundTasks):
     # Perform strict dislikes validation
@@ -27,28 +90,43 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
         # If liked, reason must be null
         request.dislike_reason = None
 
-    # Queue admin notification email asynchronously in the background
+    # Retrieve and atomically transition status from pending to resolved
+    # This prevents duplicate email dispatches under all conditions
+    payload = state_store.transition_to_resolved(request.prediction_id)
+    if not payload:
+        # State already resolved or expired - silently ignore as per rules
+        logger.info(f"Feedback ignored or already resolved for prediction ID: {request.prediction_id}")
+        return {"status": "success", "message": "Feedback already processed or expired"}
+
+    # Extract user details and prediction metadata from payload
+    user_email = payload.get("user_email") or (request.user_email.strip() if request.user_email else None)
+    user_name = payload.get("user_name") or (request.user_name.strip() if request.user_name else None)
+    pred_data = payload.get("prediction_data", {})
+
+    # Trigger background tasks (non-blocking)
+    # A) Admin Notification Email (always)
     background_tasks.add_task(
         send_admin_feedback_email,
         prediction_id=request.prediction_id,
-        country=request.country.strip(),
-        education=request.education.strip(),
-        experience=request.experience,
-        predicted_salary_usd=request.predicted_salary_usd,
+        country=pred_data.get("country") or request.country.strip(),
+        education=pred_data.get("education") or request.education.strip(),
+        experience=pred_data.get("experience") or request.experience,
+        predicted_salary_usd=pred_data.get("predicted_salary_usd") or request.predicted_salary_usd,
         is_liked=request.is_liked,
         dislike_reason=request.dislike_reason,
         text_explanation=request.text_explanation.strip() if request.text_explanation else None,
         improvement_suggestion=request.improvement_suggestion.strip() if request.improvement_suggestion else None,
-        user_email=request.user_email.strip() if request.user_email else None
+        user_email=user_email,
+        user_name=user_name,
+        timeout_event=False
     )
-    
-    # Queue user thank-you email if a valid user email is provided
-    if request.user_email and request.user_email.strip():
-        user_email_clean = request.user_email.strip()
-        if is_valid_email(user_email_clean):
-            background_tasks.add_task(
-                send_user_thank_you_email,
-                user_email=user_email_clean
-            )
 
-    return {"status": "success", "message": "Feedback received and scheduled for processing"}
+    # B) User Thank You Email (only if user_email exists and is valid)
+    if user_email and is_valid_email(user_email):
+        background_tasks.add_task(
+            send_user_thank_you_email,
+            user_email=user_email,
+            user_name=user_name
+        )
+
+    return {"status": "success", "message": "Feedback submitted successfully"}

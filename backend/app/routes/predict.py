@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict
 import logging
+import uuid
+from datetime import datetime, timezone
 
 # 🌟 FIX: Absolute imports based on Root Directory = 'backend'
 from app.schemas.salary_schema import (
@@ -18,6 +20,7 @@ from app.services.currency_service import (
     get_country_currency,
     get_supported_currencies
 )
+from app.services.state_store import state_store
 
 # =========================================================
 # LOGGING
@@ -50,11 +53,34 @@ async def predict_salary_endpoint(request: PredictionRequest):
         target_currency = get_country_currency(clean_country)
         converted_salary = await convert_currency(salary_usd, target_currency)
 
+        # Generate unique prediction_id
+        prediction_id = str(uuid.uuid4())
+        
+        # Save state to state_store
+        payload = {
+            "prediction_id": prediction_id,
+            "user_email": request.user_email.strip() if request.user_email else None,
+            "user_name": request.user_name.strip() if request.user_name else None,
+            "created_at": datetime.now(timezone.utc).timestamp(),
+            "status": "pending",
+            "prediction_data": {
+                "country": clean_country,
+                "education": clean_edu,
+                "experience": request.experience,
+                "predicted_salary_usd": round(float(salary_usd), 2)
+            }
+        }
+        
+        # 5-minute decision window (300 seconds TTL)
+        state_store.set(prediction_id, payload, 300)
+
         return PredictionResponse(
             predicted_salary=round(float(converted_salary), 2),
             predicted_salary_usd=round(float(salary_usd), 2),
-            currency=target_currency
+            currency=target_currency,
+            prediction_id=prediction_id
         )
+
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

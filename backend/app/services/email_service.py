@@ -74,36 +74,46 @@ def send_admin_feedback_email(
     education: str,
     experience: float,
     predicted_salary_usd: float,
-    is_liked: bool,
+    is_liked: Optional[bool] = None,
     dislike_reason: str = None,
     text_explanation: str = None,
     improvement_suggestion: str = None,
-    user_email: str = None
+    user_email: str = None,
+    user_name: str = None,
+    timeout_event: bool = False
 ) -> bool:
     """
-    Formats and sends feedback submission details to the admin inbox (SMTP_RECEIVER).
+    Formats and sends feedback submission details or timeout event warnings to the admin inbox (SMTP_RECEIVER).
     """
     if not SMTP_RECEIVER:
         logger.error("Cannot dispatch admin notification: SMTP_RECEIVER environment variable is not defined.")
         return False
 
-    subject = f"New Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'}"
+    if timeout_event:
+        subject = f"Prediction Feedback Timeout - User did not respond ({prediction_id[:8]})"
+        header_title = "User Did Not Respond"
+        header_color = "#9ca3af"
+    else:
+        subject = f"New Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({prediction_id[:8]})"
+        header_title = f"Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
+        header_color = "#10b981" if is_liked else "#ef4444"
     
     html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color: {'#10b981' if is_liked else '#ef4444'};">
-            Prediction Feedback Received: {'Liked 👍' if is_liked else 'Disliked 👎'}
+        <h2 style="color: {header_color}; margin-bottom: 5px;">
+            {header_title}
         </h2>
+        <p style="font-size: 12px; color: #666; margin-top: 0;">ID: {prediction_id}</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         
         <h3>Context Details:</h3>
         <ul>
-            <li><strong>Prediction ID:</strong> {prediction_id or 'N/A'}</li>
             <li><strong>Country:</strong> {country}</li>
             <li><strong>Education Level:</strong> {education}</li>
             <li><strong>Experience:</strong> {experience} Years</li>
             <li><strong>Predicted Salary (USD):</strong> ${predicted_salary_usd:,.2f}</li>
+            <li><strong>User Name:</strong> {user_name or 'Anonymous'}</li>
             <li><strong>User Email:</strong> {user_email or 'Not Provided'}</li>
         </ul>
 
@@ -112,21 +122,21 @@ def send_admin_feedback_email(
         <p style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 10px; margin: 10px 0;">
             <strong>{dislike_reason}</strong>
         </p>
-        ''' if not is_liked else ''}
+        ''' if not is_liked and dislike_reason and not timeout_event else ''}
 
         {f'''
         <h3>User Explanation:</h3>
         <p style="background-color: #f9fafb; border-left: 4px solid #9ca3af; padding: 10px; margin: 10px 0; font-style: italic;">
             {text_explanation}
         </p>
-        ''' if text_explanation else ''}
+        ''' if text_explanation and not timeout_event else ''}
 
         {f'''
         <h3>Improvement Suggestion:</h3>
         <p style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 10px; margin: 10px 0;">
             {improvement_suggestion}
         </p>
-        ''' if improvement_suggestion else ''}
+        ''' if improvement_suggestion and not timeout_event else ''}
         
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 11px; color: #999;">This is an automated notification from your Salary Prediction Feedback System.</p>
@@ -137,26 +147,73 @@ def send_admin_feedback_email(
     return send_email(SMTP_RECEIVER, subject, html)
 
 # =========================================================
-# 💖 USER THANK YOU EMAIL FORMATTER
+# 💖 USER THANK YOU EMAIL FORMATTER (CASE A)
 # =========================================================
-def send_user_thank_you_email(user_email: str) -> bool:
+def send_user_thank_you_email(user_email: str, user_name: str = None) -> bool:
     """
-    Sends a simple, professional thank you email to the user.
+    Sends a thank you email containing developer information and portfolio links (Case A).
     """
     subject = "Thank you for your feedback"
+    recipient_name = user_name if user_name else "Developer"
     
     html = f"""
     <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2>Thank You for Your Feedback!</h2>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #10b981;">Thank You for Your Feedback!</h2>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p>Hello,</p>
-        <p>Thank you for submitting feedback on the Salary Prediction System. Your response has been successfully recorded.</p>
-        <p>We use feedback from users like you to continually train and refine our machine learning models, improving prediction accuracy and overall system performance.</p>
-        <p>We appreciate your time and contribution.</p>
+        <p>Hello {recipient_name},</p>
+        <p>Thank you for submitting feedback on the Salary Prediction System. Your response has been recorded.</p>
+        <p>Feedback like yours is essential to help continuously train and refine our machine learning models, leading to better predictions and overall system performance.</p>
+        
+        <div style="background-color: #f9fafb; border-left: 4px solid #6366f1; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h4 style="margin-top: 0; color: #4f46e5; font-size: 16px;">About the Developer</h4>
+            <p style="font-size: 14px; margin-bottom: 15px;">
+                <strong>Name:</strong> Divyan S<br />
+                <strong>GitHub:</strong> <a href="https://github.com/Divyan-SS" target="_blank" style="color: #4f46e5; text-decoration: none;">github.com/Divyan-SS</a><br />
+                <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/divyan-s" target="_blank" style="color: #4f46e5; text-decoration: none;">linkedin.com/in/divyan-s</a>
+            </p>
+            <p style="font-size: 13px; color: #555; line-height: 1.5; font-style: italic; margin-bottom: 0;">
+                Divyan S is a passionate Software Developer specializing in building scalable web applications and integrating advanced machine learning pipelines. Committed to open-source contributions and continuous architecture improvement.
+            </p>
+        </div>
+
+        <p>We appreciate your time and support!</p>
         <br />
-        <p>Best regards,</p>
-        <p><strong>Salary Prediction Team</strong></p>
+        <p>Best regards,<br /><strong>Salary Prediction Team</strong></p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
+    </body>
+    </html>
+    """
+    
+    return send_email(user_email, subject, html)
+
+# =========================================================
+# 🧭 USER FOLLOW-UP EMAIL FORMATTER (CASE B)
+# =========================================================
+def send_user_follow_up_email(user_email: str, user_name: str = None) -> bool:
+    """
+    Sends a follow-up email requesting feedback and encouraging page exploration (Case B).
+    """
+    subject = "Thanks for visiting"
+    recipient_name = user_name if user_name else "there"
+    
+    html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #4f46e5;">Thanks for visiting!</h2>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p>Hello {recipient_name},</p>
+        <p>We noticed you explored our Salary Prediction System today! We hope the prediction results were helpful and interesting.</p>
+        <p>If you have a moment, we would love to know what you think. Giving a quick **Like** or **Dislike** on the prediction card helps us optimize our regression engine and correct data mapping irregularities.</p>
+        
+        <p style="margin: 20px 0;">
+            Please consider returning to the page to share your feedback. It takes only two clicks and motivates active development!
+        </p>
+        
+        <p>Thank you again for your time and exploration.</p>
+        <br />
+        <p>Best regards,<br /><strong>Salary Prediction Team</strong></p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
     </body>
