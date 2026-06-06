@@ -1,142 +1,119 @@
-import smtplib
 import os
 import logging
+import base64
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 
-
 # =========================================================
-# LOGGING & SMTP SETUP
+# LOGGING & CONFIG SETUP
 # =========================================================
 logger = logging.getLogger(__name__)
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+# Resolve environment variables securely
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_RECEIVER = os.getenv("SMTP_RECEIVER") or SMTP_USER
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN")
 
-# Resolve environment variables securely with fallbacks
-SMTP_USER = os.getenv("SMTP_USER") or os.getenv("EMAIL_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASS")
-SMTP_RECEIVER = os.getenv("SMTP_RECEIVER") or os.getenv("EMAIL_RECEIVER") or SMTP_USER
-
-if SMTP_PASSWORD:
-    SMTP_PASSWORD = SMTP_PASSWORD.replace(" ", "")
-
-if not SMTP_USER or not SMTP_PASSWORD or not SMTP_RECEIVER:
-    logger.warning("SMTP email service is not fully configured via environment variables.")
+if not SMTP_USER or not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET or not GOOGLE_REFRESH_TOKEN:
+    logger.warning("Gmail API email service is not fully configured via environment variables.")
 
 # =========================================================
-# ✉️ REUSABLE EMAIL HELPER (WITH NETWORK EXCEPTION LOGS)
+# 🔐 GMAIL API OAUTH2 ACCESS TOKEN HELPER
+# =========================================================
+def get_gmail_access_token() -> Optional[str]:
+    """
+    Exchanges the refresh token for a live, short-lived access token via HTTPS.
+    """
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
+    
+    if not client_id or not client_secret or not refresh_token:
+        logger.error("Gmail OAuth2 credentials are not fully configured in the environment.")
+        return None
+        
+    try:
+        url = "https://oauth2.googleapis.com/token"
+        payload = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token"
+        }
+        logger.info("Attempting OAuth2 access token refresh...")
+        r = requests.post(url, data=payload, timeout=10)
+        if r.status_code == 200:
+            token_data = r.json()
+            access_token = token_data.get("access_token")
+            if access_token:
+                logger.info("Successfully retrieved fresh Gmail API access token.")
+                return access_token
+            else:
+                logger.error("OAuth2 response did not contain access_token.")
+        else:
+            logger.error(f"Failed to refresh access token: {r.status_code} - {r.text}")
+    except Exception as e:
+        logger.error(f"Error during OAuth2 token exchange: {str(e)}")
+        
+    return None
+
+# =========================================================
+# ✉️ REUSABLE EMAIL HELPER (GMAIL API VIA HTTPS PORT 443)
 # =========================================================
 def send_email(to_email: str, subject: str, html_body: str) -> bool:
     """
     Sends an HTML email to the specified address.
-    Attempts Resend API first (if RESEND_API_KEY is configured), then falls back to SMTP over IPv4.
+    Authenticates via Google OAuth2 and dispatches through the Gmail API.
     """
-    # 1. Try sending via Resend API if configured
-    resend_key = os.getenv("RESEND_API_KEY")
-    if resend_key:
-        try:
-            import httpx
-            headers = {
-                "Authorization": f"Bearer {resend_key}",
-                "Content-Type": "application/json"
-            }
-            # Using standard onboarding address for Resend
-            payload = {
-                "from": "Salary Predictor <onboarding@resend.dev>",
-                "to": [to_email],
-                "subject": subject,
-                "html": html_body
-            }
-            logger.info(f"Attempting to send email to {to_email} via Resend API")
-            r = httpx.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
-            if r.status_code in (200, 201):
-                logger.info(f"EMAIL_STATUS: success (Email delivered to {to_email} via Resend API)")
-                return True
-            else:
-                logger.warning(f"Resend API returned status {r.status_code}: {r.text}. Falling back to SMTP.")
-        except Exception as api_err:
-            logger.warning(f"Resend API connection failed: {str(api_err)}. Falling back to SMTP.")
-
-    if not SMTP_USER or not SMTP_PASSWORD:
-        logger.warning("EMAIL_STATUS: skipped (SMTP credentials are not configured in the environment)")
+    sender = os.getenv("SMTP_USER")
+    if not sender:
+        logger.error("EMAIL_STATUS: failed (SMTP_USER/sender is not configured)")
         return False
-
-    server = None
-    connected = False
-    connection_error = None
-    
-    # Try Port 587 (STARTTLS) first, then Port 465 (Implicit SSL/TLS)
-    connection_configs = [(587, False), (465, True)]
-
-    for port, use_ssl in connection_configs:
-        try:
-            import socket
-            # Resolve to all available IPv4 addresses for this combination
-            addr_info = socket.getaddrinfo(SMTP_SERVER, port, family=socket.AF_INET, type=socket.SOCK_STREAM)
-            
-            for res in addr_info:
-                ip_address = res[4][0]
-                try:
-                    logger.info(f"Attempting SMTP connection to {ip_address}:{port} (SSL: {use_ssl})")
-                    if use_ssl:
-                        server = smtplib.SMTP_SSL(timeout=5)
-                        server._host = SMTP_SERVER
-                        server.connect(ip_address, port)
-                    else:
-                        server = smtplib.SMTP(ip_address, port, timeout=5)
-                        server.server_hostname = SMTP_SERVER
-                        server.starttls()
-                    
-                    connected = True
-                    break
-                except Exception as e:
-                    logger.warning(f"Connection attempt failed to {ip_address}:{port} - {str(e)}")
-                    connection_error = e
-                    if server:
-                        try:
-                            server.quit()
-                        except:
-                            pass
-                        server = None
-                    continue
-            
-            if connected:
-                break
-        except Exception as e:
-            logger.warning(f"DNS resolution or socket setup failed for port {port}: {str(e)}")
-            connection_error = e
-            continue
-
-    if not connected or not server:
-        logger.error(f"EMAIL_STATUS: failed (SMTP connection could not be established on ports 587 or 465: {str(connection_error)})")
+        
+    access_token = get_gmail_access_token()
+    if not access_token:
+        logger.error("EMAIL_STATUS: failed (Could not retrieve access token for Gmail API)")
         return False
-
+        
     try:
+        # Build standard MIME message
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = SMTP_USER
+        msg["From"] = sender
         msg["To"] = to_email
         msg.attach(MIMEText(html_body, "html"))
-
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail(SMTP_USER, to_email, msg.as_string())
-        server.quit()
-
-        logger.info(f"EMAIL_STATUS: success (Email delivered to {to_email})")
-        return True
-
+        
+        # Google Gmail API expects a base64url encoded MIME message
+        raw_bytes = msg.as_bytes()
+        encoded_message = base64.urlsafe_b64encode(raw_bytes).decode("utf-8")
+        
+        # Gmail API send message endpoint
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "raw": encoded_message
+        }
+        
+        logger.info(f"Attempting to send email to {to_email} via Gmail API")
+        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        
+        if r.status_code in (200, 201):
+            logger.info(f"EMAIL_STATUS: success (Email delivered to {to_email} via Gmail API)")
+            return True
+        else:
+            logger.error(f"EMAIL_STATUS: failed (Gmail API returned status {r.status_code}: {r.text})")
+            return False
+            
     except Exception as e:
-        logger.error(f"EMAIL_STATUS: failed (SMTP execution error to {to_email}: {str(e)})")
-        if server:
-            try:
-                server.quit()
-            except:
-                pass
+        logger.error(f"EMAIL_STATUS: failed (Gmail API execution error to {to_email}: {str(e)})")
         return False
-
-    return False
 
 # =========================================================
 # 📢 ADMIN FEEDBACK NOTIFICATION FORMATTER
