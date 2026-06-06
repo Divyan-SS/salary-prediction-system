@@ -140,13 +140,15 @@ def send_admin_feedback_email(
         logger.error("Cannot dispatch admin notification: SMTP_RECEIVER environment variable is not defined.")
         return False
 
+    user_label = user_name.strip() if user_name and user_name.strip() else f"ID: {prediction_id[:8]}"
+
     if timeout_event:
-        subject = f"Prediction Feedback Timeout - User did not respond ({prediction_id[:8]})"
+        subject = f"Prediction Feedback Timeout - User did not respond ({user_label})"
         header_title = "User Did Not Respond"
         header_color = "#9ca3af"
     else:
         prefix = "UPDATED" if is_edit else "New"
-        subject = f"{prefix} Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({prediction_id[:8]})"
+        subject = f"{prefix} Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({user_label})"
         header_title = f"{prefix} Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
         header_color = "#10b981" if is_liked else "#ef4444"
     
