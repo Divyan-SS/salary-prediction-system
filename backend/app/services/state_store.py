@@ -26,7 +26,7 @@ class StateStore:
     def get(self, prediction_id: str) -> Optional[dict]:
         raise NotImplementedError
 
-    def transition_to_resolved(self, prediction_id: str) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
         raise NotImplementedError
 
     def delete(self, prediction_id: str) -> bool:
@@ -34,6 +34,12 @@ class StateStore:
 
     def scan_expired(self) -> List[tuple[str, dict]]:
         raise NotImplementedError
+
+    def check_feedback_exists(self, prediction_id: str) -> bool:
+        payload = self.get(prediction_id)
+        if not payload:
+            return False
+        return bool(payload.get("submitted", False))
 
 # =========================================================
 # 🧠 IN-MEMORY STATE STORE (DEFAULT)
@@ -64,28 +70,24 @@ class InMemoryStateStore(StateStore):
                 return None
             return entry["payload"]
 
-    def transition_to_resolved(self, prediction_id: str) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
         with self._lock:
             entry = self._store.get(prediction_id)
             if not entry:
-                # Cache expired or is general feedback
-                return {"status": "not_cached"}
+                return None
             
             # Check if expired
             if datetime.utcnow().timestamp() > entry["expiry"]:
                 del self._store[prediction_id]
-                return {"status": "not_cached"}
+                return None
 
             payload = entry["payload"]
-            if payload.get("status") == "pending":
-                payload["status"] = "resolved"
-                # Keep resolved entry in cache for 1 hour to prevent duplicates
-                entry["expiry"] = datetime.utcnow().timestamp() + 3600
-                return payload
-            elif payload.get("status") == "resolved":
-                # Duplicate feedback attempt blocked
-                return None
-            return None
+            payload["submitted"] = True
+            payload["feedback_data"] = feedback_data
+            
+            # Keep resolved entry in cache for 1 hour to prevent duplicates and allow edits
+            entry["expiry"] = datetime.utcnow().timestamp() + 3600
+            return payload
 
     def delete(self, prediction_id: str) -> bool:
         with self._lock:
@@ -101,7 +103,7 @@ class InMemoryStateStore(StateStore):
             for prediction_id, entry in list(self._store.items()):
                 if now >= entry["expiry"]:
                     payload = entry["payload"]
-                    if payload.get("status") == "pending":
+                    if not payload.get("submitted", False):
                         expired.append((prediction_id, payload))
                     del self._store[prediction_id]
         return expired
@@ -132,9 +134,9 @@ class RedisStateStore(StateStore):
             logger.error(f"Redis get failed for {prediction_id}: {str(e)}")
             return None
 
-    def transition_to_resolved(self, prediction_id: str) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
         """
-        Atomic check-and-set transition using a Redis WATCH transaction.
+        Atomic check-and-set upsert using a Redis WATCH transaction.
         """
         try:
             pipe = self._redis.pipeline()
@@ -142,30 +144,24 @@ class RedisStateStore(StateStore):
             val = pipe.get(prediction_id)
             if not val:
                 pipe.unwatch()
-                return {"status": "not_cached"}
+                return None
             
             payload = json.loads(val)
-            if payload.get("status") == "pending":
-                payload["status"] = "resolved"
-                
-                # Execute transaction
-                pipe.multi()
-                # Set key to resolved with 1 hour (3600s) TTL to prevent duplicate sends
-                pipe.setex(prediction_id, 3600, json.dumps(payload))
-                pipe.execute()
-                return payload
-            elif payload.get("status") == "resolved":
-                pipe.unwatch()
-                return None
-            else:
-                pipe.unwatch()
-                return None
+            payload["submitted"] = True
+            payload["feedback_data"] = feedback_data
+            
+            # Execute transaction
+            pipe.multi()
+            # Set key with 1 hour (3600s) TTL to allow future edits
+            pipe.setex(prediction_id, 3600, json.dumps(payload))
+            pipe.execute()
+            return payload
         except redis.WatchError:
             # Transaction failed due to concurrent modification (race condition)
             logger.warning(f"WatchError: concurrent modification attempt detected for {prediction_id}.")
             return None
         except Exception as e:
-            logger.error(f"Redis transition_to_resolved failed for {prediction_id}: {str(e)}")
+            logger.error(f"Redis upsert_feedback failed for {prediction_id}: {str(e)}")
             return None
 
     def delete(self, prediction_id: str) -> bool:

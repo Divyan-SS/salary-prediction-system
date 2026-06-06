@@ -1,7 +1,7 @@
 // frontend/src/pages/FeedbackPage.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { submitFeedback } from "../services/api";
+import { submitFeedback, getFeedbackStatus } from "../services/api";
 import toast from "react-hot-toast";
 
 export default function FeedbackPage() {
@@ -10,7 +10,9 @@ export default function FeedbackPage() {
   const [dislikeReason, setDislikeReason] = useState("");
   const [textExplanation, setTextExplanation] = useState("");
   const [improvementSuggestion, setImprovementSuggestion] = useState("");
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,9 +24,11 @@ export default function FeedbackPage() {
   useEffect(() => {
     // 1. Load recent prediction if it exists
     const cachedPrediction = sessionStorage.getItem("recent_prediction");
+    let predObj = null;
     if (cachedPrediction) {
       try {
-        setPrediction(JSON.parse(cachedPrediction));
+        predObj = JSON.parse(cachedPrediction);
+        setPrediction(predObj);
       } catch (e) {
         console.error("Failed to parse recent prediction:", e);
       }
@@ -35,6 +39,35 @@ export default function FeedbackPage() {
     const storedEmail = localStorage.getItem("salary_user_email") || "";
     setUserName(storedName);
     setUserEmail(storedEmail);
+
+    // 3. Fetch status from backend if prediction exists
+    if (predObj && predObj.prediction_id) {
+      setLoading(true);
+      getFeedbackStatus(predObj.prediction_id)
+        .then((res) => {
+          if (res.data.submitted) {
+            setSubmitted(true);
+            setEditMode(false);
+            
+            // Prefill inputs with previous feedback
+            const prev = res.data.feedback || {};
+            setIsLiked(prev.is_liked !== undefined ? prev.is_liked : null);
+            setDislikeReason(prev.dislike_reason || "");
+            setTextExplanation(prev.text_explanation || "");
+            setImprovementSuggestion(prev.improvement_suggestion || "");
+            setConfirmCheck(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to check status:", err);
+          if (err.response?.status === 404) {
+            setError("Session expired or invalid prediction ID. Please run a salary prediction first.");
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
   }, []);
 
   const validateEmail = (email) => {
@@ -107,8 +140,10 @@ export default function FeedbackPage() {
       }
       localStorage.setItem("salary_asked_user_info", "true");
 
-      setFeedbackSubmitted(true);
-      toast.success("Thank you for your feedback!");
+      setSubmitted(true);
+      setEditMode(false);
+      setJustSubmitted(true);
+      toast.success(editMode ? "Feedback updated successfully!" : "Thank you for your feedback!");
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to submit feedback. Please try again.");
     } finally {
@@ -142,7 +177,7 @@ export default function FeedbackPage() {
           </p>
         </div>
 
-        {feedbackSubmitted ? (
+        {justSubmitted ? (
           <div className="bg-zinc-900/60 border border-emerald-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,17 +185,57 @@ export default function FeedbackPage() {
               </svg>
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">Feedback Submitted Successfully!</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                Feedback Submitted Successfully!
+              </h2>
               <p className="text-xs sm:text-sm text-slate-400">
                 Thank you for helping us improve our prediction models. We appreciate your time!
               </p>
             </div>
-            <Link
-              to="/"
-              className="inline-block bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md active:scale-[0.99] select-none text-xs sm:text-sm"
-            >
-              Back to Home
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => setJustSubmitted(false)}
+                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm active:scale-[0.99]"
+              >
+                View Status
+              </button>
+              <Link
+                to="/"
+                className="bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-bold px-6 py-3 rounded-2xl transition-all select-none text-xs sm:text-sm flex items-center justify-center border border-zinc-700/60 active:scale-[0.99]"
+              >
+                Back to Home
+              </Link>
+            </div>
+          </div>
+        ) : submitted && !editMode ? (
+          <div className="bg-zinc-900/60 border border-indigo-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
+            <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/10">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">You have already submitted feedback for this prediction.</h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                You can review your previous answers, make changes by editing, or go back to the calculator.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => setEditMode(true)}
+                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm active:scale-[0.99]"
+              >
+                ✔ Edit Feedback
+              </button>
+              <Link
+                to="/"
+                className="bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-bold px-6 py-3 rounded-2xl transition-all select-none text-xs sm:text-sm flex items-center justify-center border border-zinc-700/60 active:scale-[0.99]"
+              >
+                ❌ Cancel
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="bg-zinc-900/45 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl">

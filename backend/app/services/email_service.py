@@ -128,7 +128,8 @@ def send_admin_feedback_email(
     improvement_suggestion: str = None,
     user_email: str = None,
     user_name: str = None,
-    timeout_event: bool = False
+    timeout_event: bool = False,
+    is_edit: bool = False
 ) -> bool:
     """
     Formats and sends feedback submission details or timeout event warnings to the admin inbox (SMTP_RECEIVER).
@@ -142,8 +143,9 @@ def send_admin_feedback_email(
         header_title = "User Did Not Respond"
         header_color = "#9ca3af"
     else:
-        subject = f"New Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({prediction_id[:8]})"
-        header_title = f"Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
+        prefix = "UPDATED" if is_edit else "New"
+        subject = f"{prefix} Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({prediction_id[:8]})"
+        header_title = f"{prefix} Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
         header_color = "#10b981" if is_liked else "#ef4444"
     
     html = f"""
@@ -197,17 +199,19 @@ def send_admin_feedback_email(
 # =========================================================
 # 💖 USER THANK YOU EMAIL FORMATTER (CASE A)
 # =========================================================
-def send_user_thank_you_email(user_email: str, user_name: str = None) -> bool:
+def send_user_thank_you_email(user_email: str, user_name: str = None, is_edit: bool = False) -> bool:
     """
     Sends a thank you email containing developer information and portfolio links (Case A).
     """
-    subject = "Thank you for your feedback"
+    subject = "Updated: Thank you for your feedback" if is_edit else "Thank you for your feedback"
+    header_title = "Your Updated Feedback!" if is_edit else "Thank You for Your Feedback!"
+    header_color = "#4f46e5" if is_edit else "#10b981"
     recipient_name = user_name if user_name else "Developer"
     
     html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #10b981;">Thank You for Your Feedback!</h2>
+        <h2 style="color: {header_color};">{header_title}</h2>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p>Hello {recipient_name},</p>
         <p>Thank you for submitting feedback on the Salary Prediction System. Your response has been recorded.</p>

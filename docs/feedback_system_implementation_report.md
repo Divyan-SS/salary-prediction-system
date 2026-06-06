@@ -1,91 +1,89 @@
-# Final Implementation Report: Feedback & Email Flow System
+# Final Implementation Report: Feedback & Email Flow System (Production Refined)
 
-This document outlines the finalized production-ready implementation of the user-facing feedback flow, popup intercept modal, checkbox verification logic, and sequential user journeys.
-
----
-
-## 1. UI Flow Changes & Phrasing updates
-
-To prioritize user privacy, friendly engagement, and data accuracy, the following user interface rules are enforced:
-*   **One-Time Opt-in Intercept Popup**: Displays a glassmorphic popup modal intercepting the first prediction click on a device. It collects optional contact details (Name and Email) and shows a preview of the selected Country, Education Level, and Experience.
-*   **Voluntary Collection**: Name and Email fields are always optional. Users can skip details or leave them blank. The system never blocks any feature due to missing user details.
-*   **Friendly Feedback Phrasing**: Copied details and prompts are updated to be non-technical and welcoming:
-    *   *Subtext*: "Your thoughts and experience help us refine our salary estimator and make predictions better for everyone."
-    *   *Improvement Prompt*: "Share your suggestions to improve predictions or overall experience."
+This document outlines the simplified, production-stable architecture, state models, backend upsert mechanisms, and email dispatch behaviors of the Salary Prediction Feedback system.
 
 ---
 
-## 2. Reordered Feedback Page Structure
+## 1. Final Feedback System Architecture
 
-The Feedback page is restructured into a clean, sequential flow to guide user interactions naturally:
-
-1.  **Rate the Application / Result (Top Section)**: Display of thumbs-up (👍 Yes, Looks Right) and thumbs-down (👎 No, Seems Wrong) rating buttons. If disliked, a mandatory reason selector appears.
-2.  **Active Prediction Context (Middle Section)**: A clean visual block summarizing the calculated prediction attributes (Country, Education level, Years of Experience, and Predicted Salary in the target currency). Shows a "General App Feedback" warning if no active prediction session is cached.
-3.  **Details & Phrased Suggestions (Bottom Section)**: Optional detail textareas allowing users to explain comments or suggest improvements.
-4.  **Verification Checkbox & Submit (Footer Section)**: The confirmation checkbox and the submit button.
-
----
-
-## 3. Button Enable/Disable Validation Logic
-
-The primary submission and saving buttons are controlled strictly by confirmation checkbox states to ensure feedback belongs to verified user sessions:
+The feedback module uses a stateless API model coupled with an in-memory/Redis state store engine to track predictions and prevent duplicate entry generation:
 
 ```
-[Is Rating Selected? (isLiked !== null)]
-              │
-              ├──► No  ──► Button DISABLED
-              ▼
-[Is Dislike Reason Filled? (If Disliked)]
-              │
-              ├──► No  ──► Button DISABLED
-              ▼
-[Is Confirmation Checkbox Checked? (confirmCheck === true)]
-              │
-              ├──► No  ──► Button DISABLED
-              ▼
-              YES ──► Button ENABLED
+[User Action: Calculate Prediction]
+                  │
+                  ▼
+      [StateStore: Init Session] ◄── Set: submitted = False, TTL = 300s
+                  │
+                  ▼
+       [Frontend Feedback Page] ◄─── Fetch GET /api/feedback/status/{id}
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+[submitted == False]    [submitted == True && editMode == False]
+        │                   │
+        │                   ├──► Render: Already Submitted Screen
+        │                   │
+        │                   ├──► Button: Cancel ────► Redirect Home
+        │                   ▼
+        │             Button: Edit ──► Set: editMode = True
+        ▼                   │
+   [Render Input Form] ◄────┘
+        │
+        ▼
+   [Submit Form] ──► Post /api/feedback ──► Upsert Data & Update TTL to 1 hour
 ```
-
-*   **Prediction Popup**: The "Save & Predict" and "Skip & Predict" buttons remain completely disabled (`opacity-40`) until the user checks the checkbox: *"I confirm these details are correct and belong to my prediction session"*.
-*   **Feedback Form**: The "Submit Feedback" button remains disabled until the confirmation checkbox is checked, a rating is chosen, and a dislike reason is provided (if rating is thumbs-down).
-*   **Optional Fields Exclusion**: Entering Name or Email has no impact on button states and is never required to submit or predict.
 
 ---
 
-## 4. State & Local Storage Lifecycles
+## 2. Backend Logic Simplification
 
-The frontend maintains states and client-side storage to minimize repeated prompts and keep the interface clean:
-
-*   `salary_asked_user_info = true` *(localStorage)*: Saved immediately when a user skips or saves details on their first prediction popup. When this key is present, the popup modal is permanently bypassed on all future clicks.
-*   `salary_user_name` / `salary_user_email` *(localStorage)*: Stores user contact details permanently to pre-fill future requests and pre-populate inputs on the Feedback tab (where they remain visible and editable).
-*   `recent_prediction` *(sessionStorage)*: Stores the active prediction result and context data generated during the user's current browser session, allowing the Feedback page to pre-populate the Active Prediction Context block.
-*   `confirmCheck` *(React State)*: A local boolean state initialized to `false` on component mount, governing button disabled states.
+The backend has been refactored to remove complex "resolved" state transitions and now exposes two simple, clean methods:
+1.  `check_feedback_exists(prediction_id) -> bool`: Checks if the session exists and has already been submitted.
+2.  `upsert_feedback(prediction_id, data) -> Optional[dict]`: Updates the active prediction session in-place with the submitted feedback data and marks it as submitted. If the session is missing or expired, it returns `None` (preventing automatic key recreation).
 
 ---
 
-## 5. Final User Journey Summary
+## 3. Upsert-Based Feedback Handling
 
-```
-[User Profile Entry]
-       │
-       ▼
-[Click "Predict Salary"]
-       │
-       ├──► First Time on Device?
-       │        ├──► Yes ──► Show Popup ──► Check Confirmation ──► Save/Skip ──► Predict
-       │        └──► No  ─────────────────────────────────────────────────────► Predict
-       ▼
-[View Result Card] ──► Click "Leave Feedback" 
-                                │
-                                ▼
-                       [Feedback Tab Router]
-                                │
-                                ├──► Pre-fill Active Prediction Context
-                                ├──► Select Rating (👍 / 👎)
-                                ├──► Check Session Confirmation Checkbox
-                                └──► Click "Submit Feedback"
-```
+*   **Prediction ID as the Single Source of Truth**: All feedback records are tied directly to the unique `prediction_id` UUID generated during prediction.
+*   **Atomic Upserts**:
+    *   *InMemoryStateStore*: Performs thread-safe lock-guarded in-place updates.
+    *   *RedisStateStore*: Uses atomic check-and-set Redis `WATCH` transactions to ensure consistency across multiple worker threads.
+*   **Persistence & TTL Extension**: When feedback is saved or edited, the entry's TTL is extended by 3,600 seconds (1 hour) in the state store to allow subsequent edits within that active window. If a session is expired or not found, the endpoints reject the attempt with a `404 Not Found` (Session expired) response.
 
-1.  **Prediction Phase**: The user chooses input variables on the calculator. Upon clicking predict, they see the optional details popup (first-time only) showing their selected attributes. They check the verification box and click Predict.
-2.  **Conversion Phase**: The salary prediction is shown. The card links the user to the Feedback page to leave rating evaluations.
-3.  **Feedback Phase**: On the Feedback page, the user rates the prediction, views the active context, provides optional comments, checks the confirmation checkbox, and submits. The system processes SMTP admin reports and thank-you messages asynchronously, maintaining a seamless, zero-friction experience.
+---
+
+## 4. Frontend State Model (submitted vs editMode)
+
+The React page lifecycle is governed by two boolean state flags:
+*   `submitted` (Boolean): Synchronized with the backend state on mount. If `true`, the user has already successfully submitted feedback for the current prediction ID.
+*   `editMode` (Boolean): A UI-only flag. When `true`, it unlocks the input form, rendering it editable. When `false`, it keeps the inputs locked and displays the options banner.
+
+*Note: A third helper state `justSubmitted` is used to briefly display a thank-you success card immediately upon clicking submit, reverting to the status check state on re-entry.*
+
+---
+
+## 5. Email Behavior Final Rules
+
+*   **Admin Email Alerts**:
+    *   Sent on first feedback submission.
+    *   Sent when the user saves a confirmed update in `editMode`. The email subject is prepended with `UPDATED` to prevent flooding the admin inbox with duplicate threads.
+*   **User Thank-You Emails**:
+    *   Sent **ONLY ONCE** per prediction session (upon the first submission).
+    *   If the user edits their feedback, the thank-you email dispatch is skipped to prevent user spam.
+
+---
+
+## 6. Duplicate Prevention Mechanism
+
+*   **Upserts**: Because the backend matches feedback strictly by `prediction_id` and performs upsert operations on the state store, no duplicate database/cache records can be generated.
+*   **UI Gating**: If a user reloads the feedback page or navigates back to it, the mount hook fetches the status from the server. If `submitted` is `true`, it gates the interface with the *"already submitted"* banner, preventing double-clicks or accidental duplicate inserts.
+
+---
+
+## 7. Production Readiness Summary
+
+*   **Stateless Fallback**: General app feedback behaves gracefully. If no prediction session is active, it runs as stateless fallback feedback.
+*   **Session Expiration Safety**: Expired prediction sessions are never automatically recreated, preventing empty/invalid emails from being sent.
+*   **Thread Safety**: Both single-instance (In-Memory) and horizontally scalable (Redis) environments are supported with atomic locks.
+*   **Resiliency**: Handled over IPv4 connection relays on Render to prevent network timeouts.

@@ -62,7 +62,8 @@ async def predict_salary_endpoint(request: PredictionRequest):
             "user_email": request.user_email.strip() if request.user_email else None,
             "user_name": request.user_name.strip() if request.user_name else None,
             "created_at": datetime.now(timezone.utc).timestamp(),
-            "status": "pending",
+            "submitted": False,
+            "feedback_data": None,
             "prediction_data": {
                 "country": clean_country,
                 "education": clean_edu,

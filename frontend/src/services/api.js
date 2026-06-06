@@ -25,5 +25,6 @@ export const uploadCSV = (formData) => api.post('/api/upload-csv', formData, { h
 export const fetchAnalytics = () => api.get('/api/analytics');
 export const fetchFilteredAnalytics = (countries, education_levels, experience_range) => api.post('/api/analytics/filter', { countries, education_levels, experience_range });
 export const submitFeedback = (data) => api.post('/api/feedback', data);
+export const getFeedbackStatus = (predictionId) => api.get(`/api/feedback/status/${predictionId}`);
 
 export default api;
