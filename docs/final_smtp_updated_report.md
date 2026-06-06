@@ -33,6 +33,8 @@ The following backend logic corrections were applied inside [email_service.py](f
     ```
 *   **Network Exception Safety**:
     The send pipeline was wrapped in an all-inclusive `try-except` block to capture connection errors, TLS failures, and authentication timeouts, returning a boolean status (`True`/`False`) instead of raising crashes.
+*   **Forced IPv4 Routing**:
+    To prevent `[Errno 101] Network is unreachable` errors in IPv4-only container hosts, the backend explicitly resolves the SMTP domain (`smtp.gmail.com`) to an IPv4 address using `socket.getaddrinfo(..., family=socket.AF_INET)` before establishing the socket. It upgrades the connection using STARTTLS, passing `server_hostname` to preserve SSL/TLS certificate verification.
 *   **Structured Logging**:
     Removed redundant loops and logging statements to avoid spam. Added standard, easily parsable structured logging strings:
     *   `EMAIL_STATUS: success (Email delivered to ...)`

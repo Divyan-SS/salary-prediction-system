@@ -30,13 +30,14 @@ if not SMTP_USER or not SMTP_PASSWORD or not SMTP_RECEIVER:
 # =========================================================
 def send_email(to_email: str, subject: str, html_body: str) -> bool:
     """
-    Sends an HTML email to the specified address.
+    Sends an HTML email to the specified address resolving the server over IPv4.
     """
     if not SMTP_USER or not SMTP_PASSWORD:
         logger.warning("EMAIL_STATUS: skipped (SMTP credentials are not configured in the environment)")
         return False
 
     try:
+        import socket
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = SMTP_USER
@@ -44,9 +45,16 @@ def send_email(to_email: str, subject: str, html_body: str) -> bool:
 
         msg.attach(MIMEText(html_body, "html"))
 
-        # Connect to SMTP server with a strict 10s connection timeout
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
-        server.starttls()
+        # Resolve host to IPv4 address to prevent network unreachable errors under IPv4-only containers
+        addr_info = socket.getaddrinfo(SMTP_SERVER, SMTP_PORT, family=socket.AF_INET)
+        resolved_ip = addr_info[0][4][0]
+
+        # Connect to resolved IPv4 address with a strict 10s connection timeout
+        server = smtplib.SMTP(resolved_ip, SMTP_PORT, timeout=10)
+        
+        # Upgrade connection using STARTTLS with the original hostname for SSL validation
+        server.starttls(server_hostname=SMTP_SERVER)
+        
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.sendmail(SMTP_USER, to_email, msg.as_string())
         server.quit()
