@@ -514,4 +514,12 @@ Frontend dependencies:
 - `backend/app/routes/analytics.py` -> `backend/app/ml/preprocessing.py` -> `backend/dataset/survey_results_public.csv`
 - `backend/app/routes/predict.py` -> `backend/app/ml/predict_salary.py` -> `backend/app/ml/preprocessing.py` -> `backend/app/models/saved_steps.pkl`
 
+13. Feedback & Email Flow System Documentation
+---------------------------------------------
+For detailed design decisions, user flow validation, network assessments, and deployment guidelines for the Smart Feedback and SMTP Email system, please refer to the following documents in the `docs/` directory:
+- `docs/feedback_system_implementation_report.md` : Details frontend modal popup, confirmation checkbox validations, and reordered sections.
+- `docs/final_smtp_updated_report.md` : Explains root cause socket diagnostics (IPv6 resolution), Render port configurations, and transition recommendations to transactional email providers.
+- `docs/feedback_system_walkthrough.md` : Summarizes backend architecture changes, state store options (In-Memory/Redis), and the background timeout sweeper logic.
+
 This document provides a detailed summary of the project structure, workflow, components, API flow, state management, routing, chart behaviors, filtering logic, backend integration, and architecture.
+
