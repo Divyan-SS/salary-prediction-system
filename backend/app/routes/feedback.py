@@ -104,16 +104,8 @@ async def get_feedback_status(prediction_id: str):
 # =========================================================
 @router.post("/feedback")
 async def submit_feedback(request: FeedbackRequest, background_tasks: BackgroundTasks):
-    # Perform strict dislikes validation
-    if not request.is_liked:
-        allowed_reasons = {'Too High', 'Too Low', 'Incorrect Data Mapping', 'Other'}
-        if request.dislike_reason not in allowed_reasons:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Dislike reason is mandatory and must be one of: {list(allowed_reasons)}"
-            )
-    else:
-        # If liked, reason must be null
+    # Dislike reason is optional
+    if request.is_liked:
         request.dislike_reason = None
 
     # Handle general app feedback case separately (stateless fallback)

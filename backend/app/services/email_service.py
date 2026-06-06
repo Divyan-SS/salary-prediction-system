@@ -31,9 +31,34 @@ if not SMTP_USER or not SMTP_PASSWORD or not SMTP_RECEIVER:
 def send_email(to_email: str, subject: str, html_body: str) -> bool:
     """
     Sends an HTML email to the specified address.
-    Attempts Port 587 (STARTTLS) first, falling back to Port 465 (SSL/TLS) if blocked or timed out,
-    using resolved IPv4 addresses to bypass IPv6 container network limitations.
+    Attempts Resend API first (if RESEND_API_KEY is configured), then falls back to SMTP over IPv4.
     """
+    # 1. Try sending via Resend API if configured
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        try:
+            import httpx
+            headers = {
+                "Authorization": f"Bearer {resend_key}",
+                "Content-Type": "application/json"
+            }
+            # Using standard onboarding address for Resend
+            payload = {
+                "from": "Salary Predictor <onboarding@resend.dev>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body
+            }
+            logger.info(f"Attempting to send email to {to_email} via Resend API")
+            r = httpx.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
+            if r.status_code in (200, 201):
+                logger.info(f"EMAIL_STATUS: success (Email delivered to {to_email} via Resend API)")
+                return True
+            else:
+                logger.warning(f"Resend API returned status {r.status_code}: {r.text}. Falling back to SMTP.")
+        except Exception as api_err:
+            logger.warning(f"Resend API connection failed: {str(api_err)}. Falling back to SMTP.")
+
     if not SMTP_USER or not SMTP_PASSWORD:
         logger.warning("EMAIL_STATUS: skipped (SMTP credentials are not configured in the environment)")
         return False

@@ -84,11 +84,6 @@ export default function FeedbackPage() {
       return;
     }
 
-    if (isLiked === false && !dislikeReason) {
-      setError("Please select a reason for your dislike.");
-      return;
-    }
-
     if (userEmail && userEmail.trim() && !validateEmail(userEmail)) {
       setError("Please provide a valid email format (e.g. user@example.com) or leave the field blank.");
       return;
@@ -106,7 +101,7 @@ export default function FeedbackPage() {
           experience: prediction.experience !== undefined ? prediction.experience : 5.0,
           predicted_salary_usd: prediction.predicted_salary_usd || prediction.predicted_salary || 0.0,
           is_liked: isLiked,
-          dislike_reason: isLiked ? null : dislikeReason,
+          dislike_reason: null,
           text_explanation: textExplanation.trim() || null,
           improvement_suggestion: improvementSuggestion.trim() || null,
           user_email: userEmail.trim() || null,
@@ -121,7 +116,7 @@ export default function FeedbackPage() {
           experience: 0.0,
           predicted_salary_usd: 0.0,
           is_liked: isLiked,
-          dislike_reason: isLiked ? null : dislikeReason,
+          dislike_reason: null,
           text_explanation: textExplanation.trim() || null,
           improvement_suggestion: improvementSuggestion.trim() || null,
           user_email: userEmail.trim() || null,
@@ -272,23 +267,7 @@ export default function FeedbackPage() {
                 </div>
               </div>
 
-              {/* Dislike Reason Selector */}
-              {isLiked === false && (
-                <div className="space-y-1.5 animate-fade-slide">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Why does this look incorrect? (Mandatory)</label>
-                  <select
-                    value={dislikeReason}
-                    onChange={(e) => { setDislikeReason(e.target.value); setError(""); }}
-                    className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500 transition"
-                  >
-                    <option value="">-- Select Reason --</option>
-                    <option value="Too High">Too High</option>
-                    <option value="Too Low">Too Low</option>
-                    <option value="Incorrect Data Mapping">Incorrect Data Mapping</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              )}
+              {/* Dislike reason selector removed */}
 
               {/* 2. Active Prediction Context */}
               {prediction ? (
@@ -403,7 +382,7 @@ export default function FeedbackPage() {
               {/* Submit button */}
               <button
                 type="submit"
-                disabled={loading || isLiked === null || (isLiked === false && !dislikeReason) || !confirmCheck}
+                disabled={loading || isLiked === null || !confirmCheck}
                 className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl transition-all shadow-md disabled:opacity-40 select-none active:scale-[0.99]"
               >
                 {loading ? "Submitting Feedback..." : "Submit Feedback"}
