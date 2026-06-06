@@ -5,10 +5,10 @@ from email.mime.multipart import MIMEMultipart
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USER = os.getenv("SMTP_USER", "divyansample3@gmail.com")
+SMTP_USER = os.getenv("SMTP_USER", "divyan.siva.dev@gmail.com")
 # Strip spaces from password
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "canymqwdhtboakfu")
-SMTP_RECEIVER = os.getenv("SMTP_RECEIVER", "divyansample3@gmail.com")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "qlsqsanthrwaoop").replace(" ", "")
+SMTP_RECEIVER = os.getenv("SMTP_RECEIVER", "divyan.siva.dev@gmail.com")
 
 def send_feedback_email(
     prediction_id: str,
