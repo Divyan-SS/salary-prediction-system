@@ -11,3 +11,5 @@ class FeedbackRequest(BaseModel):
     dislike_reason: Optional[str] = None
     text_explanation: Optional[str] = None
     improvement_suggestion: Optional[str] = None
+    user_email: Optional[str] = None
+

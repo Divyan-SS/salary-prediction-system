@@ -2,16 +2,18 @@ import sqlite3
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.schemas.feedback_schema import FeedbackRequest
-from app.services.email_service import send_feedback_email
+from app.services.email_service import send_admin_feedback_email, send_user_thank_you_email
 
 router = APIRouter(tags=["Feedback"])
 
 DB_PATH = Path(__file__).resolve().parent.parent / "feedback.db"
 
-# Initialize SQLite database and feedback table
+# Initialize SQLite database and feedback table (with safe migrations)
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    
+    # Create the base table if it doesn't exist yet
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS predictions_feedback (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,9 +30,21 @@ def init_db():
         );
     """)
     conn.commit()
+
+    # Idempotent database schema migration to add 'user_email' column if missing
+    try:
+        cursor.execute("PRAGMA table_info(predictions_feedback);")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "user_email" not in columns:
+            cursor.execute("ALTER TABLE predictions_feedback ADD COLUMN user_email TEXT;")
+            conn.commit()
+    except Exception:
+        # Ignore exceptions (e.g. locks or columns already added concurrently)
+        pass
+
     conn.close()
 
-# Run initialization
+# Run database setup/migration
 init_db()
 
 @router.post("/feedback")
@@ -54,8 +68,8 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
             INSERT OR REPLACE INTO predictions_feedback (
                 prediction_id, country, education, experience, 
                 predicted_salary_usd, is_liked, dislike_reason, 
-                text_explanation, improvement_suggestion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                text_explanation, improvement_suggestion, user_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             request.prediction_id,
             request.country.strip(),
@@ -65,14 +79,15 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
             request.is_liked,
             request.dislike_reason,
             request.text_explanation.strip() if request.text_explanation else None,
-            request.improvement_suggestion.strip() if request.improvement_suggestion else None
+            request.improvement_suggestion.strip() if request.improvement_suggestion else None,
+            request.user_email.strip() if request.user_email else None
         ))
         conn.commit()
         conn.close()
         
-        # Dispatch email asynchronously in the background
+        # Dispatch admin notification email asynchronously in the background
         background_tasks.add_task(
-            send_feedback_email,
+            send_admin_feedback_email,
             prediction_id=request.prediction_id,
             country=request.country.strip(),
             education=request.education.strip(),
@@ -81,8 +96,16 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
             is_liked=request.is_liked,
             dislike_reason=request.dislike_reason,
             text_explanation=request.text_explanation.strip() if request.text_explanation else None,
-            improvement_suggestion=request.improvement_suggestion.strip() if request.improvement_suggestion else None
+            improvement_suggestion=request.improvement_suggestion.strip() if request.improvement_suggestion else None,
+            user_email=request.user_email.strip() if request.user_email else None
         )
+        
+        # Dispatch user thank-you email if a user email was provided
+        if request.user_email and request.user_email.strip():
+            background_tasks.add_task(
+                send_user_thank_you_email,
+                user_email=request.user_email.strip()
+            )
         
         return {"status": "success", "message": "Feedback submitted successfully"}
     except Exception as e:
