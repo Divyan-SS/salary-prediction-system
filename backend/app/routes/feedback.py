@@ -1,7 +1,8 @@
 import sqlite3
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.schemas.feedback_schema import FeedbackRequest
+from app.services.email_service import send_feedback_email
 
 router = APIRouter(tags=["Feedback"])
 
@@ -33,7 +34,7 @@ def init_db():
 init_db()
 
 @router.post("/feedback")
-async def submit_feedback(request: FeedbackRequest):
+async def submit_feedback(request: FeedbackRequest, background_tasks: BackgroundTasks):
     # Perform strict dislikes validation
     if not request.is_liked:
         allowed_reasons = {'Too High', 'Too Low', 'Incorrect Data Mapping', 'Other'}
@@ -68,6 +69,21 @@ async def submit_feedback(request: FeedbackRequest):
         ))
         conn.commit()
         conn.close()
+        
+        # Dispatch email asynchronously in the background
+        background_tasks.add_task(
+            send_feedback_email,
+            prediction_id=request.prediction_id,
+            country=request.country.strip(),
+            education=request.education.strip(),
+            experience=request.experience,
+            predicted_salary_usd=request.predicted_salary_usd,
+            is_liked=request.is_liked,
+            dislike_reason=request.dislike_reason,
+            text_explanation=request.text_explanation.strip() if request.text_explanation else None,
+            improvement_suggestion=request.improvement_suggestion.strip() if request.improvement_suggestion else None
+        )
+        
         return {"status": "success", "message": "Feedback submitted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database transaction failure: {str(e)}")
