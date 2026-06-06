@@ -17,7 +17,6 @@ export default function FeedbackPage() {
   // User details (Optional)
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [showUserInputs, setShowUserInputs] = useState(true);
   const [confirmCheck, setConfirmCheck] = useState(false);
 
   useEffect(() => {
@@ -34,11 +33,8 @@ export default function FeedbackPage() {
     // 2. Load stored user details
     const storedName = localStorage.getItem("salary_user_name") || "";
     const storedEmail = localStorage.getItem("salary_user_email") || "";
-    if (storedEmail) {
-      setUserName(storedName);
-      setUserEmail(storedEmail);
-      setShowUserInputs(false); // Hide details if they already provided them
-    }
+    setUserName(storedName);
+    setUserEmail(storedEmail);
   }, []);
 
   const validateEmail = (email) => {
@@ -287,35 +283,33 @@ export default function FeedbackPage() {
                 </div>
               )}
 
-              {/* User Inputs (Optional name and email, shown only if not already stored) */}
-              {showUserInputs && (
-                <div className="border-t border-zinc-800/80 pt-4 space-y-4 animate-fade-slide">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Your Contact Details (Optional)</label>
-                    <span className="text-[10px] text-slate-500 italic">Pre-fills future inputs</span>
+              {/* User Inputs (Optional name and email, always shown, prefilled if stored) */}
+              <div className="border-t border-zinc-800/80 pt-4 space-y-4 animate-fade-slide">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Your Contact Details (Optional)</label>
+                  <span className="text-[10px] text-slate-500 italic">Pre-fills future inputs</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      placeholder="Your Name"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                    />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        placeholder="Your Name"
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <input
-                        type="email"
-                        placeholder="Your Email"
-                        value={userEmail}
-                        onChange={(e) => setUserEmail(e.target.value)}
-                        className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                      />
-                    </div>
+                  <div className="space-y-1">
+                    <input
+                      type="email"
+                      placeholder="Your Email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                    />
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Confirmation Checkbox */}
               <div className="border-t border-zinc-800/80 pt-4 flex items-start gap-2.5 animate-fade-slide">

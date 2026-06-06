@@ -57,7 +57,7 @@ The primary submission and saving buttons are controlled strictly by confirmatio
 The frontend maintains states and client-side storage to minimize repeated prompts and keep the interface clean:
 
 *   `salary_asked_user_info = true` *(localStorage)*: Saved immediately when a user skips or saves details on their first prediction popup. When this key is present, the popup modal is permanently bypassed on all future clicks.
-*   `salary_user_name` / `salary_user_email` *(localStorage)*: Stores user contact details permanently to pre-fill future requests and hide inputs on the Feedback tab.
+*   `salary_user_name` / `salary_user_email` *(localStorage)*: Stores user contact details permanently to pre-fill future requests and pre-populate inputs on the Feedback tab (where they remain visible and editable).
 *   `recent_prediction` *(sessionStorage)*: Stores the active prediction result and context data generated during the user's current browser session, allowing the Feedback page to pre-populate the Active Prediction Context block.
 *   `confirmCheck` *(React State)*: A local boolean state initialized to `false` on component mount, governing button disabled states.
 
