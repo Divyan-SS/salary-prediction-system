@@ -62,6 +62,8 @@ async def feedback_timeout_sweeper():
                             user_email=user_email,
                             user_name=user_name
                         )
+                    else:
+                        logger.info("EMAIL_STATUS: skipped (No valid user email provided for follow-up dispatch)")
                         
         except asyncio.CancelledError:
             logger.info("Feedback timeout sweeper task cancelled.")
@@ -138,5 +140,7 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
             user_email=user_email,
             user_name=user_name
         )
+    else:
+        logger.info("EMAIL_STATUS: skipped (No valid user email provided for thank-you dispatch)")
 
     return {"status": "success", "message": "Feedback submitted successfully"}

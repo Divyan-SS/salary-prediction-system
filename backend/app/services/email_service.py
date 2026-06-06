@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-# Enforce environment variables only (no hardcoded fallback values for safety)
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SMTP_RECEIVER = os.getenv("SMTP_RECEIVER")
+# Resolve environment variables securely with fallbacks
+SMTP_USER = os.getenv("SMTP_USER") or os.getenv("EMAIL_USER")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASS")
+SMTP_RECEIVER = os.getenv("SMTP_RECEIVER") or os.getenv("EMAIL_RECEIVER") or SMTP_USER
 
 if SMTP_PASSWORD:
     SMTP_PASSWORD = SMTP_PASSWORD.replace(" ", "")
@@ -26,44 +26,37 @@ if not SMTP_USER or not SMTP_PASSWORD or not SMTP_RECEIVER:
     logger.warning("SMTP email service is not fully configured via environment variables.")
 
 # =========================================================
-# ✉️ REUSABLE EMAIL HELPER (WITH RETRIES)
+# ✉️ REUSABLE EMAIL HELPER (WITH NETWORK EXCEPTION LOGS)
 # =========================================================
 def send_email(to_email: str, subject: str, html_body: str) -> bool:
     """
     Sends an HTML email to the specified address.
-    Includes a single retry attempt for transient SMTP failures.
     """
     if not SMTP_USER or not SMTP_PASSWORD:
-        logger.error("SMTP sending aborted: SMTP credentials are not configured in the environment.")
+        logger.warning("EMAIL_STATUS: skipped (SMTP credentials are not configured in the environment)")
         return False
 
-    for attempt in range(1, 3):
-        try:
-            logger.info(f"Attempting to send email to {to_email} (Attempt {attempt}/2)...")
-            
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = SMTP_USER
-            msg["To"] = to_email
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = SMTP_USER
+        msg["To"] = to_email
 
-            msg.attach(MIMEText(html_body, "html"))
+        msg.attach(MIMEText(html_body, "html"))
 
-            # Connect to SMTP server with timeout
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SMTP_USER, to_email, msg.as_string())
-            server.quit()
+        # Connect to SMTP server with a strict 10s connection timeout
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.sendmail(SMTP_USER, to_email, msg.as_string())
+        server.quit()
 
-            logger.info(f"Email sent successfully to {to_email} on attempt {attempt}.")
-            return True
+        logger.info(f"EMAIL_STATUS: success (Email delivered to {to_email})")
+        return True
 
-        except Exception as e:
-            # Mask credentials and print/log exception safely
-            logger.error(f"SMTP execution error on attempt {attempt} for {to_email}: {str(e)}")
-            if attempt == 2:
-                logger.error(f"Failed to deliver email to {to_email} after maximum attempts.")
-                return False
+    except Exception as e:
+        logger.error(f"EMAIL_STATUS: failed (SMTP execution error to {to_email}: {str(e)})")
+        return False
 
     return False
 
