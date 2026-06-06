@@ -10,7 +10,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy all repository component layers over cleanly
 COPY . .
 
+# Train the ML model at build time to align scikit-learn versions
+RUN python -m app.ml.train_model
+
 EXPOSE 10000
+
 
 # 🌟 STANDARD DOCKER ENTRYPOINT: 
 # Target the module directly using string lists to avoid shell path wrapping errors
