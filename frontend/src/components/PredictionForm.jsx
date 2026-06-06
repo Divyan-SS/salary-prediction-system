@@ -18,39 +18,16 @@ export default function PredictionForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Modal Popup states
-  const [showPopup, setShowPopup] = useState(false);
-  const [tempName, setTempName] = useState("");
-  const [tempEmail, setTempEmail] = useState("");
-  const [popupError, setPopupError] = useState("");
-  const [confirmCheck, setConfirmCheck] = useState(false);
-
-  const validateEmail = (email) => {
-    if (!email) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  };
-
-  const handlePredictTrigger = async (nameVal = null, emailVal = null) => {
+  const handlePredictTrigger = async () => {
     setLoading(true);
     setError("");
     setPrediction(null);
-
-    // Save details to localStorage if supplied
-    if (nameVal && nameVal.trim()) {
-      localStorage.setItem("salary_user_name", nameVal.trim());
-    }
-    if (emailVal && emailVal.trim()) {
-      localStorage.setItem("salary_user_email", emailVal.trim());
-    }
-    localStorage.setItem("salary_asked_user_info", "true");
 
     try {
       const payload = {
         country: country,
         education: uiEducation, 
-        experience: parseFloat(experience),
-        user_name: localStorage.getItem("salary_user_name") || null,
-        user_email: localStorage.getItem("salary_user_email") || null
+        experience: parseFloat(experience)
       };
 
       const response = await predictSalary(payload);
@@ -70,34 +47,6 @@ export default function PredictionForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Check if the user has already been asked for their details
-    const alreadyAsked = localStorage.getItem("salary_asked_user_info") === "true";
-    if (alreadyAsked) {
-      // Proceed directly
-      handlePredictTrigger();
-    } else {
-      // Intercept and show the optional info modal
-      setConfirmCheck(false);
-      setShowPopup(true);
-    }
-  };
-
-  const handlePopupSubmit = (e) => {
-    e.preventDefault();
-    setPopupError("");
-
-    if (tempEmail && tempEmail.trim() && !validateEmail(tempEmail)) {
-      setPopupError("Please enter a valid email address or leave the field blank.");
-      return;
-    }
-
-    setShowPopup(false);
-    handlePredictTrigger(tempName, tempEmail);
-  };
-
-  const handlePopupSkip = () => {
-    setShowPopup(false);
     handlePredictTrigger();
   };
 
@@ -206,88 +155,7 @@ export default function PredictionForm() {
           </div>
         )}
 
-        {/* ─── OPTIONAL USER NAME/EMAIL POPUP MODAL ─── */}
-        {showPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-slide">
-            <div className="bg-[#0b0f19] border border-zinc-800 rounded-3xl w-full max-w-md p-6 sm:p-8 space-y-6 shadow-2xl relative">
-              
-              <div className="space-y-2 text-center">
-                <h3 className="text-xl font-bold text-white" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-                  Optimize Your Predictions
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  If you provide your email and name, I can track your feedback in the system and improve results. Please explore the page and give Like/Dislike feedback. It motivates development.
-                </p>
-              </div>
 
-              <form onSubmit={handlePopupSubmit} className="space-y-4">
-                
-                {/* Prediction Context */}
-                <div className="bg-zinc-950/40 border border-zinc-800 rounded-2xl p-4 text-left space-y-2 text-xs">
-                  <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider">Prediction Context</div>
-                  <div>Country: <span className="font-semibold text-white">{country}</span></div>
-                  <div>Education Level: <span className="font-semibold text-white">{uiEducation}</span></div>
-                  <div>Experience: <span className="font-semibold text-white">{experience} Years</span></div>
-                </div>
-
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Your Name (Optional)"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Your Email (Optional)"
-                    value={tempEmail}
-                    onChange={(e) => setTempEmail(e.target.value)}
-                    className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                  />
-                </div>
-
-                {/* Confirmation Checkbox */}
-                <div className="flex items-start gap-2.5 pt-1">
-                  <input
-                    type="checkbox"
-                    id="popup-confirm"
-                    checked={confirmCheck}
-                    onChange={(e) => setConfirmCheck(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-800 text-sky-500 bg-zinc-950/60 focus:ring-sky-500 focus:ring-offset-0 cursor-pointer"
-                  />
-                  <label htmlFor="popup-confirm" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
-                    I confirm these details are correct and belong to my prediction session
-                  </label>
-                </div>
-
-                {popupError && (
-                  <div className="text-red-400 text-xs bg-red-950/30 border border-red-900/40 rounded-xl p-2.5">
-                    ⚠️ {popupError}
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handlePopupSkip}
-                    disabled={!confirmCheck}
-                    className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-300 font-bold py-3 text-xs sm:text-sm rounded-xl border border-zinc-800 transition active:scale-[0.99] select-none disabled:opacity-40"
-                  >
-                    Skip & Predict
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!confirmCheck}
-                    className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 text-xs sm:text-sm rounded-xl transition active:scale-[0.99] select-none disabled:opacity-40"
-                  >
-                    Save & Predict
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

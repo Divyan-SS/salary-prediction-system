@@ -1,10 +1,13 @@
 import re
+import os
 import asyncio
 import logging
+import requests
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.schemas.feedback_schema import FeedbackRequest
 from app.services.state_store import state_store, InMemoryStateStore
 from app.services.email_service import send_admin_feedback_email, send_user_thank_you_email
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Feedback"])
@@ -18,15 +21,45 @@ def is_valid_email(email: str) -> bool:
     return bool(EMAIL_REGEX.match(email.strip()))
 
 # =========================================================
-# 🔄 PERIODIC TIMEOUT SWEEPER (CASE B)
+# 🔐 GMAIL API OAUTH2 TOKEN VERIFICATION HELPER
+# =========================================================
+def verify_google_token(token: str) -> Optional[dict]:
+    """
+    Verifies Google ID Token via Google's tokeninfo API.
+    Returns decoded payload if valid, else None.
+    """
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+    if not google_client_id:
+        logger.error("GOOGLE_CLIENT_ID environment variable is not defined.")
+        return None
+        
+    try:
+        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            payload = r.json()
+            # Verify audience matches our Client ID
+            if payload.get("aud") == google_client_id:
+                return payload
+            else:
+                logger.error(f"Google Token audience mismatch: {payload.get('aud')} != {google_client_id}")
+        else:
+            logger.error(f"Google tokeninfo validation failed: {r.status_code} - {r.text}")
+    except Exception as e:
+        logger.error(f"Error validating Google Token: {str(e)}")
+    return None
+
+# =========================================================
+# 🔄 PERIODIC TIMEOUT SWEEPER (CASE B - SILENT TIMEOUT)
 # =========================================================
 async def feedback_timeout_sweeper():
     """
     Background loop checking for expired pending feedback entries in InMemoryStateStore.
     Runs every 10 seconds.
+    Sweeps expired sessions silently, alerting the admin but skipping user follow-up emails.
     """
     # Import email services locally to avoid circular import issues
-    from app.services.email_service import send_admin_feedback_email, send_user_follow_up_email
+    from app.services.email_service import send_admin_feedback_email
     
     logger.info("Feedback timeout sweeper background loop started.")
     while True:
@@ -56,14 +89,8 @@ async def feedback_timeout_sweeper():
                         user_name=user_name
                     )
                     
-                    # 2. Dispatch User Follow-Up Email (if valid email is provided)
-                    if user_email and is_valid_email(user_email):
-                        send_user_follow_up_email(
-                            user_email=user_email,
-                            user_name=user_name
-                        )
-                    else:
-                        logger.info("EMAIL_STATUS: skipped (No valid user email provided for follow-up dispatch)")
+                    # 2. User Follow-Up Email is Deprecated under Google Sign-In workflow
+                    logger.info("EMAIL_STATUS: skipped (User follow-up emails on timeout are deprecated)")
                         
         except asyncio.CancelledError:
             logger.info("Feedback timeout sweeper task cancelled.")
@@ -90,7 +117,7 @@ async def get_feedback_status(prediction_id: str):
     if not payload:
         raise HTTPException(
             status_code=404, 
-            detail="Session expired or invalid prediction ID. Please run a salary prediction first."
+            detail="Session expired. Please make a new prediction."
         )
     
     return {
@@ -100,19 +127,26 @@ async def get_feedback_status(prediction_id: str):
     }
 
 # =========================================================
-# 📥 FEEDBACK SUBMISSION ENDPOINT (UPSERT LOGIC)
+# 📥 FEEDBACK SUBMISSION ENDPOINT (IMMUTABLE SINGLE SUBMIT)
 # =========================================================
 @router.post("/feedback")
 async def submit_feedback(request: FeedbackRequest, background_tasks: BackgroundTasks):
-    # Dislike reason is optional
+    # Verify Google ID Token
+    token_payload = verify_google_token(request.google_id_token)
+    if not token_payload:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Google Sign-In session. Please authenticate with Google to submit feedback."
+        )
+    
+    user_name = token_payload.get("name")
+    user_email = token_payload.get("email")
+
     if request.is_liked:
         request.dislike_reason = None
 
     # Handle general app feedback case separately (stateless fallback)
     if not request.prediction_id or request.prediction_id == "general-app-feedback":
-        user_email = request.user_email.strip() if request.user_email else None
-        user_name = request.user_name.strip() if request.user_name else None
-        
         background_tasks.add_task(
             send_admin_feedback_email,
             prediction_id="general-app-feedback",
@@ -140,10 +174,15 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
 
         return {"status": "success", "message": "General feedback submitted successfully"}
 
-    # Check if feedback was already submitted (for is_edit classification)
+    # Check if feedback was already submitted
     already_submitted = state_store.check_feedback_exists(request.prediction_id)
+    if already_submitted:
+        raise HTTPException(
+            status_code=400,
+            detail="You have already submitted feedback for this prediction."
+        )
 
-    # Prepare feedback details for upsert
+    # Prepare feedback details
     feedback_data = {
         "is_liked": request.is_liked,
         "dislike_reason": request.dislike_reason,
@@ -151,22 +190,22 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
         "improvement_suggestion": request.improvement_suggestion.strip() if request.improvement_suggestion else None
     }
 
-    # Upsert feedback in state store (keeps it resolved & extends TTL to 1 hour to allow edits)
-    payload = state_store.upsert_feedback(request.prediction_id, feedback_data)
+    # Upsert feedback (binds Google Name/Email to session and extends TTL to 1 hour for status checks)
+    payload = state_store.upsert_feedback(
+        request.prediction_id, 
+        feedback_data, 
+        user_name=user_name, 
+        user_email=user_email
+    )
     if not payload:
-        # Session not found or expired
         raise HTTPException(
             status_code=404,
-            detail="Session expired or invalid prediction ID. Please run a salary prediction first."
+            detail="Session expired. Please make a new prediction."
         )
 
-    # Extract user details and prediction metadata from payload or request fallback
-    user_email = payload.get("user_email") or (request.user_email.strip() if request.user_email else None)
-    user_name = payload.get("user_name") or (request.user_name.strip() if request.user_name else None)
     pred_data = payload.get("prediction_data", {})
 
-    # Trigger background tasks (non-blocking)
-    # A) Admin Notification Email: sent on first submission OR final confirmed edit
+    # Trigger background email dispatches
     background_tasks.add_task(
         send_admin_feedback_email,
         prediction_id=request.prediction_id,
@@ -181,21 +220,15 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
         user_email=user_email,
         user_name=user_name,
         timeout_event=False,
-        is_edit=already_submitted
+        is_edit=False
     )
 
-    # B) User Thank You Email: Send only ONE thank-you email per prediction session (no spam)
-    if not already_submitted:
-        if user_email and is_valid_email(user_email):
-            background_tasks.add_task(
-                send_user_thank_you_email,
-                user_email=user_email,
-                user_name=user_name,
-                is_edit=False
-            )
-        else:
-            logger.info("EMAIL_STATUS: skipped (No valid user email provided for thank-you dispatch)")
-    else:
-        logger.info("EMAIL_STATUS: skipped (Thank-you email already sent for this prediction session)")
+    if user_email and is_valid_email(user_email):
+        background_tasks.add_task(
+            send_user_thank_you_email,
+            user_email=user_email,
+            user_name=user_name,
+            is_edit=False
+        )
 
     return {"status": "success", "message": "Feedback submitted successfully"}

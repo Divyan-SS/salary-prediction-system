@@ -243,37 +243,3 @@ def send_user_thank_you_email(user_email: str, user_name: str = None, is_edit: b
     """
     
     return send_email(user_email, subject, html)
-
-# =========================================================
-# 🧭 USER FOLLOW-UP EMAIL FORMATTER (CASE B)
-# =========================================================
-def send_user_follow_up_email(user_email: str, user_name: str = None) -> bool:
-    """
-    Sends a follow-up email requesting feedback and encouraging page exploration (Case B).
-    """
-    subject = "Thanks for visiting"
-    recipient_name = user_name if user_name else "there"
-    
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #4f46e5;">Thanks for visiting!</h2>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p>Hello {recipient_name},</p>
-        <p>We noticed you explored our Salary Prediction System today! We hope the prediction results were helpful and interesting.</p>
-        <p>If you have a moment, we would love to know what you think. Giving a quick **Like** or **Dislike** on the prediction card helps us optimize our regression engine and correct data mapping irregularities.</p>
-        
-        <p style="margin: 20px 0;">
-            Please consider returning to the page to share your feedback. It takes only two clicks and motivates active development!
-        </p>
-        
-        <p>Thank you again for your time and exploration.</p>
-        <br />
-        <p>Best regards,<br /><strong>Salary Prediction Team</strong></p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
-    </body>
-    </html>
-    """
-    
-    return send_email(user_email, subject, html)

@@ -1,28 +1,30 @@
 // frontend/src/pages/FeedbackPage.jsx
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { submitFeedback, getFeedbackStatus } from "../services/api";
 import toast from "react-hot-toast";
 
 export default function FeedbackPage() {
+  const navigate = useNavigate();
   const [prediction, setPrediction] = useState(null);
   const [isLiked, setIsLiked] = useState(null);
   const [dislikeReason, setDislikeReason] = useState("");
   const [textExplanation, setTextExplanation] = useState("");
   const [improvementSuggestion, setImprovementSuggestion] = useState("");
+  
   const [submitted, setSubmitted] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // User details (Optional)
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+  // Google Sign-In States
+  const [googleIdToken, setGoogleIdToken] = useState("");
+  const [googleUser, setGoogleUser] = useState(null);
   const [confirmCheck, setConfirmCheck] = useState(false);
 
+  // Dynamic Google Sign-In script injection and initialization
   useEffect(() => {
-    // 1. Load recent prediction if it exists
+    // 1. Load recent prediction context
     const cachedPrediction = sessionStorage.getItem("recent_prediction");
     let predObj = null;
     if (cachedPrediction) {
@@ -34,45 +36,95 @@ export default function FeedbackPage() {
       }
     }
 
-    // 2. Load stored user details
-    const storedName = localStorage.getItem("salary_user_name") || "";
-    const storedEmail = localStorage.getItem("salary_user_email") || "";
-    setUserName(storedName);
-    setUserEmail(storedEmail);
-
-    // 3. Fetch status from backend if prediction exists
+    // 2. Fetch feedback status from backend
     if (predObj && predObj.prediction_id) {
       setLoading(true);
       getFeedbackStatus(predObj.prediction_id)
         .then((res) => {
           if (res.data.submitted) {
             setSubmitted(true);
-            setEditMode(false);
-            
-            // Prefill inputs with previous feedback
-            const prev = res.data.feedback || {};
-            setIsLiked(prev.is_liked !== undefined ? prev.is_liked : null);
-            setDislikeReason(prev.dislike_reason || "");
-            setTextExplanation(prev.text_explanation || "");
-            setImprovementSuggestion(prev.improvement_suggestion || "");
-            setConfirmCheck(true);
           }
         })
         .catch((err) => {
           console.error("Failed to check status:", err);
           if (err.response?.status === 404) {
-            setError("Session expired or invalid prediction ID. Please run a salary prediction first.");
+            setError("Session expired. Please make a new prediction.");
           }
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, []);
 
-  const validateEmail = (email) => {
-    if (!email) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    // 3. Inject Google Identity Services client script
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: "915588928767-narf0n9tltk7tibrgsjmosj1vgmtni1q.apps.googleusercontent.com",
+          callback: handleCredentialResponse
+        });
+        
+        // Render Google Sign-in button if container exists
+        const btnContainer = document.getElementById("google-signin-btn");
+        if (btnContainer) {
+          window.google.accounts.id.renderButton(btnContainer, {
+            theme: "outline",
+            size: "large",
+            text: "continue_with"
+          });
+        }
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [submitted]); // Re-initialize button if submitted state changes and returns to form
+
+  // Re-render Google button if googleUser state changes (but token isn't verified yet)
+  useEffect(() => {
+    if (!googleUser && !submitted && !justSubmitted && window.google) {
+      const btnContainer = document.getElementById("google-signin-btn");
+      if (btnContainer) {
+        window.google.accounts.id.renderButton(btnContainer, {
+          theme: "outline",
+          size: "large",
+          text: "continue_with"
+        });
+      }
+    }
+  }, [googleUser, submitted, justSubmitted]);
+
+  // Decode JWT ID Token client-side to display display name & email
+  const handleCredentialResponse = (response) => {
+    const token = response.credential;
+    setGoogleIdToken(token);
+
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      
+      const decoded = JSON.parse(jsonPayload);
+      setGoogleUser({
+        name: decoded.name,
+        email: decoded.email
+      });
+      toast.success("Authenticated with Google successfully!");
+    } catch (e) {
+      console.error("Google ID Token decoding error:", e);
+      toast.error("Failed to read user authentication details.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -84,8 +136,8 @@ export default function FeedbackPage() {
       return;
     }
 
-    if (userEmail && userEmail.trim() && !validateEmail(userEmail)) {
-      setError("Please provide a valid email format (e.g. user@example.com) or leave the field blank.");
+    if (!googleIdToken) {
+      setError("Please sign in with Google to submit feedback.");
       return;
     }
 
@@ -104,8 +156,7 @@ export default function FeedbackPage() {
           dislike_reason: null,
           text_explanation: textExplanation.trim() || null,
           improvement_suggestion: improvementSuggestion.trim() || null,
-          user_email: userEmail.trim() || null,
-          user_name: userName.trim() || null
+          google_id_token: googleIdToken
         };
       } else {
         // General App Feedback Fallback
@@ -119,26 +170,15 @@ export default function FeedbackPage() {
           dislike_reason: null,
           text_explanation: textExplanation.trim() || null,
           improvement_suggestion: improvementSuggestion.trim() || null,
-          user_email: userEmail.trim() || null,
-          user_name: userName.trim() || null
+          google_id_token: googleIdToken
         };
       }
 
       await submitFeedback(payload);
       
-      // Save details to localStorage if successfully submitted
-      if (userEmail.trim()) {
-        localStorage.setItem("salary_user_email", userEmail.trim());
-      }
-      if (userName.trim()) {
-        localStorage.setItem("salary_user_name", userName.trim());
-      }
-      localStorage.setItem("salary_asked_user_info", "true");
-
       setSubmitted(true);
-      setEditMode(false);
       setJustSubmitted(true);
-      toast.success(editMode ? "Feedback updated successfully!" : "Thank you for your feedback!");
+      toast.success("Thank you for your feedback!");
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to submit feedback. Please try again.");
     } finally {
@@ -168,11 +208,35 @@ export default function FeedbackPage() {
             User Feedback
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-            Your thoughts and experience help us refine our salary estimator and make predictions better for everyone.
+            Your thoughts help us refine our salary estimator and make predictions better for everyone.
           </p>
         </div>
 
-        {justSubmitted ? (
+        {error && error.includes("Session expired") ? (
+          <div className="bg-zinc-900/60 border border-red-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
+            <div className="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                Session Expired
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                Please make a new prediction to submit feedback.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Link
+                to="/"
+                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm flex items-center justify-center active:scale-[0.99]"
+              >
+                Make Another Prediction
+              </Link>
+            </div>
+          </div>
+        ) : justSubmitted ? (
           <div className="bg-zinc-900/60 border border-emerald-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,11 +263,11 @@ export default function FeedbackPage() {
                 to="/"
                 className="bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-bold px-6 py-3 rounded-2xl transition-all select-none text-xs sm:text-sm flex items-center justify-center border border-zinc-700/60 active:scale-[0.99]"
               >
-                Back to Home
+                Make Another Prediction
               </Link>
             </div>
           </div>
-        ) : submitted && !editMode ? (
+        ) : submitted ? (
           <div className="bg-zinc-900/60 border border-indigo-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
             <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/10">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,24 +275,25 @@ export default function FeedbackPage() {
               </svg>
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">You have already submitted feedback for this prediction.</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                You have already submitted feedback for this prediction.
+              </h2>
               <p className="text-xs sm:text-sm text-slate-400">
-                You can review your previous answers, make changes by editing, or go back to the calculator.
+                To submit feedback on a new result, please run another salary prediction calculation.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                onClick={() => setEditMode(true)}
-                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm active:scale-[0.99]"
+              <Link
+                to="/"
+                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm flex items-center justify-center active:scale-[0.99]"
               >
-                ✔ Edit Feedback
-              </button>
+                Make Another Prediction
+              </Link>
               <Link
                 to="/"
                 className="bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-bold px-6 py-3 rounded-2xl transition-all select-none text-xs sm:text-sm flex items-center justify-center border border-zinc-700/60 active:scale-[0.99]"
               >
-                ❌ Cancel
+                Back Home
               </Link>
             </div>
           </div>
@@ -244,7 +309,7 @@ export default function FeedbackPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => { setIsLiked(true); setDislikeReason(""); setError(""); }}
+                    onClick={() => { setIsLiked(true); setError(""); }}
                     className={`flex-1 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] ${
                       isLiked === true 
                         ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-500/5' 
@@ -266,8 +331,6 @@ export default function FeedbackPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Dislike reason selector removed */}
 
               {/* 2. Active Prediction Context */}
               {prediction ? (
@@ -337,32 +400,29 @@ export default function FeedbackPage() {
                 </div>
               )}
 
-              {/* User Inputs (Optional name and email, always shown, prefilled if stored) */}
+              {/* Google Sign-In & verified user metadata card */}
               <div className="border-t border-zinc-800/80 pt-4 space-y-4 animate-fade-slide">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Your Contact Details (Optional)</label>
-                  <span className="text-[10px] text-slate-500 italic">Pre-fills future inputs</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Verified Identity</label>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <input
-                      type="text"
-                      placeholder="Your Name"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                    />
+                
+                {googleUser ? (
+                  <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 text-left space-y-1.5 animate-fade-slide">
+                    <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Identity Details</div>
+                    <div className="text-xs sm:text-sm text-slate-300">Name: <span className="font-semibold text-white">{googleUser.name}</span></div>
+                    <div className="text-xs sm:text-sm text-slate-300">Email: <span className="font-semibold text-white">{googleUser.email}</span></div>
+                    <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 mt-1.5 select-none">
+                      ✓ Verified by Google
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <input
-                      type="email"
-                      placeholder="Your Email"
-                      value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-                    />
+                ) : (
+                  <div className="bg-zinc-950/40 border border-zinc-800/80 rounded-2xl p-5 text-center space-y-4">
+                    <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+                      Google Sign-In is required to verify your email address for communication and feedback records. We do not store passwords or Google credentials.
+                    </p>
+                    <div className="flex justify-center" id="google-signin-btn"></div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Confirmation Checkbox */}
@@ -382,13 +442,13 @@ export default function FeedbackPage() {
               {/* Submit button */}
               <button
                 type="submit"
-                disabled={loading || isLiked === null || !confirmCheck}
+                disabled={loading || isLiked === null || !confirmCheck || !googleIdToken}
                 className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl transition-all shadow-md disabled:opacity-40 select-none active:scale-[0.99]"
               >
                 {loading ? "Submitting Feedback..." : "Submit Feedback"}
               </button>
 
-              {error && (
+              {error && !error.includes("Session expired") && (
                 <div className="text-red-400 text-xs bg-red-950/30 border border-red-900/40 rounded-xl p-3 animate-fade-slide">
                   ⚠️ {error}
                 </div>

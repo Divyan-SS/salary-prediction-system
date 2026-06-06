@@ -16,8 +16,6 @@ class PredictionRequest(BaseModel):
     country: str
     education: str
     experience: float = Field(..., ge=0, le=50, description="Years of experience (0-50)")
-    user_name: Optional[str] = None
-    user_email: Optional[str] = None
 
     @validator('education')
     def validate_education(cls, v):

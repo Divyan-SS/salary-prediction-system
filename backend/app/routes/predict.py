@@ -59,8 +59,8 @@ async def predict_salary_endpoint(request: PredictionRequest):
         # Save state to state_store
         payload = {
             "prediction_id": prediction_id,
-            "user_email": request.user_email.strip() if request.user_email else None,
-            "user_name": request.user_name.strip() if request.user_name else None,
+            "user_email": None,
+            "user_name": None,
             "created_at": datetime.now(timezone.utc).timestamp(),
             "submitted": False,
             "feedback_data": None,

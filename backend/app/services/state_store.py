@@ -26,7 +26,7 @@ class StateStore:
     def get(self, prediction_id: str) -> Optional[dict]:
         raise NotImplementedError
 
-    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict, user_name: Optional[str] = None, user_email: Optional[str] = None) -> Optional[dict]:
         raise NotImplementedError
 
     def delete(self, prediction_id: str) -> bool:
@@ -70,7 +70,7 @@ class InMemoryStateStore(StateStore):
                 return None
             return entry["payload"]
 
-    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict, user_name: Optional[str] = None, user_email: Optional[str] = None) -> Optional[dict]:
         with self._lock:
             entry = self._store.get(prediction_id)
             if not entry:
@@ -84,6 +84,10 @@ class InMemoryStateStore(StateStore):
             payload = entry["payload"]
             payload["submitted"] = True
             payload["feedback_data"] = feedback_data
+            if user_name:
+                payload["user_name"] = user_name
+            if user_email:
+                payload["user_email"] = user_email
             
             # Keep resolved entry in cache for 1 hour to prevent duplicates and allow edits
             entry["expiry"] = datetime.utcnow().timestamp() + 3600
@@ -134,7 +138,7 @@ class RedisStateStore(StateStore):
             logger.error(f"Redis get failed for {prediction_id}: {str(e)}")
             return None
 
-    def upsert_feedback(self, prediction_id: str, feedback_data: dict) -> Optional[dict]:
+    def upsert_feedback(self, prediction_id: str, feedback_data: dict, user_name: Optional[str] = None, user_email: Optional[str] = None) -> Optional[dict]:
         """
         Atomic check-and-set upsert using a Redis WATCH transaction.
         """
@@ -149,6 +153,10 @@ class RedisStateStore(StateStore):
             payload = json.loads(val)
             payload["submitted"] = True
             payload["feedback_data"] = feedback_data
+            if user_name:
+                payload["user_name"] = user_name
+            if user_email:
+                payload["user_email"] = user_email
             
             # Execute transaction
             pipe.multi()
