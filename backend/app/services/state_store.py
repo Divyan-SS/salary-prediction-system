@@ -68,19 +68,23 @@ class InMemoryStateStore(StateStore):
         with self._lock:
             entry = self._store.get(prediction_id)
             if not entry:
-                return None
+                # Cache expired or is general feedback
+                return {"status": "not_cached"}
             
             # Check if expired
             if datetime.utcnow().timestamp() > entry["expiry"]:
                 del self._store[prediction_id]
-                return None
+                return {"status": "not_cached"}
 
             payload = entry["payload"]
             if payload.get("status") == "pending":
                 payload["status"] = "resolved"
-                # Delete immediately to prevent duplicate requests/race conditions
-                del self._store[prediction_id]
+                # Keep resolved entry in cache for 1 hour to prevent duplicates
+                entry["expiry"] = datetime.utcnow().timestamp() + 3600
                 return payload
+            elif payload.get("status") == "resolved":
+                # Duplicate feedback attempt blocked
+                return None
             return None
 
     def delete(self, prediction_id: str) -> bool:
@@ -138,7 +142,7 @@ class RedisStateStore(StateStore):
             val = pipe.get(prediction_id)
             if not val:
                 pipe.unwatch()
-                return None
+                return {"status": "not_cached"}
             
             payload = json.loads(val)
             if payload.get("status") == "pending":
@@ -146,9 +150,13 @@ class RedisStateStore(StateStore):
                 
                 # Execute transaction
                 pipe.multi()
-                pipe.delete(prediction_id)  # Remove upon resolution to avoid duplicates
+                # Set key to resolved with 1 hour (3600s) TTL to prevent duplicate sends
+                pipe.setex(prediction_id, 3600, json.dumps(payload))
                 pipe.execute()
                 return payload
+            elif payload.get("status") == "resolved":
+                pipe.unwatch()
+                return None
             else:
                 pipe.unwatch()
                 return None

@@ -1,7 +1,7 @@
 //frontend/src/components/ResultCard.jsx
 import { useState, useEffect } from "react";
-import { convertSalary, getSupportedCurrencies, submitFeedback } from "../services/api";
-import toast from 'react-hot-toast';
+import { Link } from "react-router-dom";
+import { convertSalary, getSupportedCurrencies } from "../services/api";
 
 export default function ResultCard({ prediction }) {
   const [showConverter, setShowConverter] = useState(false);
@@ -10,46 +10,13 @@ export default function ResultCard({ prediction }) {
   const [supportedCurrencies, setSupportedCurrencies] = useState({});
   const [conversionLoading, setConversionLoading] = useState(false);
   const [conversionError, setConversionError] = useState("");
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-  const [isLiked, setIsLiked] = useState(null);
-  const [dislikeReason, setDislikeReason] = useState("");
-  const [textExplanation, setTextExplanation] = useState("");
-  const [improvementSuggestion, setImprovementSuggestion] = useState("");
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [feedbackError, setFeedbackError] = useState("");
 
-  const handleFeedbackSubmit = async (e) => {
-    e.preventDefault();
-    if (isLiked === false && !dislikeReason) {
-      setFeedbackError("Please select a reason for your dislike.");
-      return;
+  // Store prediction context in sessionStorage whenever a new prediction is calculated
+  useEffect(() => {
+    if (prediction && prediction.prediction_id) {
+      sessionStorage.setItem("recent_prediction", JSON.stringify(prediction));
     }
-    
-    setFeedbackLoading(true);
-    setFeedbackError("");
-    
-    try {
-      const payload = {
-        prediction_id: prediction.prediction_id || null,
-        country: prediction.country || "United States",
-        education: prediction.education || "Postgraduate",
-        experience: prediction.experience !== undefined ? prediction.experience : 5.0,
-        predicted_salary_usd: prediction.predicted_salary_usd || prediction.predicted_salary || 0.0,
-        is_liked: isLiked,
-        dislike_reason: isLiked ? null : dislikeReason,
-        text_explanation: textExplanation.trim() || null,
-        improvement_suggestion: improvementSuggestion.trim() || null
-      };
-      
-      await submitFeedback(payload);
-      setFeedbackSubmitted(true);
-      toast.success("Thank you for your feedback!");
-    } catch (err) {
-      setFeedbackError(err.response?.data?.detail || "Feedback submission failed");
-    } finally {
-      setFeedbackLoading(false);
-    }
-  };
+  }, [prediction]);
 
   useEffect(() => {
     const fetchCurrencies = async () => {
@@ -67,12 +34,6 @@ export default function ResultCard({ prediction }) {
     setConvertedAmount(prediction.predicted_salary || 0);
     setTargetCurrency(prediction.currency || 'USD');
     setShowConverter(false);
-    setFeedbackSubmitted(false);
-    setIsLiked(null);
-    setDislikeReason("");
-    setTextExplanation("");
-    setImprovementSuggestion("");
-    setFeedbackError("");
   }, [prediction]);
 
   const handleConvert = async () => {
@@ -217,103 +178,20 @@ export default function ResultCard({ prediction }) {
           </div>
         )}
 
-        {/* Feedback Widget Panel */}
-        <div className="rounded-xl sm:rounded-[24px] bg-zinc-900/30 border border-zinc-800/80 shadow-md overflow-hidden animate-fade-slide w-full p-4 sm:p-6 space-y-4">
-          <div className="border-b border-zinc-800/60 pb-3">
-            <h3 className="text-sm sm:text-base font-semibold text-white">Was this prediction accurate?</h3>
-          </div>
-          
-          {feedbackSubmitted ? (
-            <div className="text-center py-4 text-emerald-400 font-semibold text-xs sm:text-sm animate-fade-slide">
-              ✓ Thank you for helping us improve our prediction models!
-            </div>
-          ) : (
-            <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setIsLiked(true); setDislikeReason(""); setFeedbackError(""); }}
-                  className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    isLiked === true 
-                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
-                      : 'bg-zinc-950/40 border-zinc-800 text-gray-400 hover:bg-zinc-800/30'
-                  }`}
-                >
-                  👍 Yes, Looks Right
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsLiked(false); setFeedbackError(""); }}
-                  className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    isLiked === false 
-                      ? 'bg-red-500/20 border-red-500 text-red-400' 
-                      : 'bg-zinc-950/40 border-zinc-800 text-gray-400 hover:bg-zinc-800/30'
-                  }`}
-                >
-                  👎 No, Seems Wrong
-                </button>
-              </div>
-
-              {isLiked === false && (
-                <div className="space-y-3.5 animate-fade-slide">
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5">Why does this look incorrect? (Mandatory)</label>
-                    <select
-                      value={dislikeReason}
-                      onChange={(e) => { setDislikeReason(e.target.value); setFeedbackError(""); }}
-                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500"
-                    >
-                      <option value="">-- Select Reason --</option>
-                      <option value="Too High">Too High</option>
-                      <option value="Too Low">Too Low</option>
-                      <option value="Incorrect Data Mapping">Incorrect Data Mapping</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5">Explain details (Optional)</label>
-                    <textarea
-                      value={textExplanation}
-                      onChange={(e) => setTextExplanation(e.target.value)}
-                      rows={2}
-                      placeholder="Share details about why this prediction seems wrong..."
-                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {isLiked !== null && (
-                <div className="space-y-3.5 animate-fade-slide">
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5">Improvement suggestions (Optional)</label>
-                    <textarea
-                      value={improvementSuggestion}
-                      onChange={(e) => setImprovementSuggestion(e.target.value)}
-                      rows={2}
-                      placeholder="How can we make these predictions better?"
-                      className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={feedbackLoading || (isLiked === false && !dislikeReason)}
-                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 text-xs sm:text-sm rounded-xl transition disabled:opacity-40"
-                  >
-                    {feedbackLoading ? "Submitting..." : "Submit Feedback"}
-                  </button>
-                </div>
-              )}
-
-              {feedbackError && (
-                <div className="text-red-400 text-[11px] sm:text-xs bg-red-950/30 border border-red-900/40 rounded-xl p-2.5 animate-fade-slide">
-                  ⚠️ {feedbackError}
-                </div>
-              )}
-            </form>
-          )}
+        {/* Redirect Feedback Link Card */}
+        <div className="rounded-xl sm:rounded-[24px] bg-zinc-900/30 border border-zinc-800/80 shadow-md overflow-hidden animate-fade-slide w-full p-4 sm:p-6 text-center space-y-3">
+          <p className="text-xs sm:text-sm text-slate-400">
+            Help us optimize our salary prediction engine by sharing your feedback.
+          </p>
+          <Link
+            to="/feedback"
+            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 text-xs sm:text-sm rounded-xl sm:rounded-[24px] transition-all shadow-md active:scale-[0.99] select-none"
+          >
+            Leave Feedback
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
         </div>
       </div>
     </>

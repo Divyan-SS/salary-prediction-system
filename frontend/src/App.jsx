@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import IndividualPredictPage from './pages/IndividualPredictPage';
 import BatchPredictPage from './pages/BatchPredictPage';
 import ExplorePage from './pages/ExplorePage';
+import FeedbackPage from './pages/FeedbackPage';
 
 function App() {
   return (
@@ -20,8 +21,10 @@ function App() {
           <Route path="/individual" element={<IndividualPredictPage />} />
           <Route path="/batch" element={<BatchPredictPage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/feedback" element={<FeedbackPage />} />
         </Routes>
       </main>
+
       <Footer />
       <Toaster position="bottom-right" />
     </>

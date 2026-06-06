@@ -1,4 +1,4 @@
-﻿// Navbar.jsx
+// Navbar.jsx
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -54,8 +54,10 @@ export default function Navbar() {
                 { path: '/', label: 'Home' },
                 { path: '/individual', label: 'Individual' },
                 { path: '/batch', label: 'Batch' },
-                { path: '/explore', label: 'Explore' }
+                { path: '/explore', label: 'Explore' },
+                { path: '/feedback', label: 'Feedback' }
               ].map((item) => (
+
                 <Link
                   key={item.path}
                   to={item.path}

@@ -94,14 +94,24 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
     # This prevents duplicate email dispatches under all conditions
     payload = state_store.transition_to_resolved(request.prediction_id)
     if not payload:
-        # State already resolved or expired - silently ignore as per rules
+        # State already resolved - silently ignore as per rules
         logger.info(f"Feedback ignored or already resolved for prediction ID: {request.prediction_id}")
-        return {"status": "success", "message": "Feedback already processed or expired"}
+        return {"status": "success", "message": "Feedback already processed"}
 
-    # Extract user details and prediction metadata from payload
-    user_email = payload.get("user_email") or (request.user_email.strip() if request.user_email else None)
-    user_name = payload.get("user_name") or (request.user_name.strip() if request.user_name else None)
-    pred_data = payload.get("prediction_data", {})
+    # Extract user details and prediction metadata from payload or request fallback
+    if payload.get("status") == "not_cached":
+        user_email = request.user_email.strip() if request.user_email else None
+        user_name = request.user_name.strip() if request.user_name else None
+        pred_data = {
+            "country": request.country.strip(),
+            "education": request.education.strip(),
+            "experience": request.experience,
+            "predicted_salary_usd": request.predicted_salary_usd
+        }
+    else:
+        user_email = payload.get("user_email") or (request.user_email.strip() if request.user_email else None)
+        user_name = payload.get("user_name") or (request.user_name.strip() if request.user_name else None)
+        pred_data = payload.get("prediction_data", {})
 
     # Trigger background tasks (non-blocking)
     # A) Admin Notification Email (always)

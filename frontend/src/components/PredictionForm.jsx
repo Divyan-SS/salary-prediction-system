@@ -18,18 +18,38 @@ export default function PredictionForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Modal Popup states
+  const [showPopup, setShowPopup] = useState(false);
+  const [tempName, setTempName] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
+  const [popupError, setPopupError] = useState("");
+
+  const validateEmail = (email) => {
+    if (!email) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
+  const handlePredictTrigger = async (nameVal = null, emailVal = null) => {
     setLoading(true);
     setError("");
     setPrediction(null);
-    
+
+    // Save details to localStorage if supplied
+    if (nameVal && nameVal.trim()) {
+      localStorage.setItem("salary_user_name", nameVal.trim());
+    }
+    if (emailVal && emailVal.trim()) {
+      localStorage.setItem("salary_user_email", emailVal.trim());
+    }
+    localStorage.setItem("salary_asked_user_info", "true");
+
     try {
-      // 🌟 FIXED: Sent uiEducation directly to match backend Pydantic validation
       const payload = {
         country: country,
         education: uiEducation, 
-        experience: parseFloat(experience)
+        experience: parseFloat(experience),
+        user_name: localStorage.getItem("salary_user_name") || null,
+        user_email: localStorage.getItem("salary_user_email") || null
       };
 
       const response = await predictSalary(payload);
@@ -37,8 +57,7 @@ export default function PredictionForm() {
         ...response.data,
         country: country,
         education: uiEducation,
-        experience: parseFloat(experience),
-        prediction_id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
+        experience: parseFloat(experience)
       });
     } catch (err) {
       console.error("Prediction Handshake Error:", err);
@@ -46,6 +65,38 @@ export default function PredictionForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Check if the user has already been asked for their details
+    const alreadyAsked = localStorage.getItem("salary_asked_user_info") === "true";
+    if (alreadyAsked) {
+      // Proceed directly
+      handlePredictTrigger();
+    } else {
+      // Intercept and show the optional info modal
+      setShowPopup(true);
+    }
+  };
+
+  const handlePopupSubmit = (e) => {
+    e.preventDefault();
+    setPopupError("");
+
+    if (tempEmail && tempEmail.trim() && !validateEmail(tempEmail)) {
+      setPopupError("Please enter a valid email address or leave the field blank.");
+      return;
+    }
+
+    setShowPopup(false);
+    handlePredictTrigger(tempName, tempEmail);
+  };
+
+  const handlePopupSkip = () => {
+    setShowPopup(false);
+    handlePredictTrigger();
   };
 
   return (
@@ -76,7 +127,7 @@ export default function PredictionForm() {
         }
       `}</style>
 
-      <div className="space-y-6 sm:space-y-8 w-full max-w-full">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full relative">
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           <div className="animate-fade-slide">
             <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2">Country</label>
@@ -131,7 +182,7 @@ export default function PredictionForm() {
           <button
             type="submit"
             disabled={loading}
-            className="animate-fade-slide w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.4)] disabled:opacity-50 active:scale-[0.99]"
+            className="animate-fade-slide w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.4)] disabled:opacity-50 active:scale-[0.99] select-none"
             style={{ animationDelay: "0.15s" }}
           >
             {loading ? "Calculating..." : "Predict Salary"}
@@ -150,6 +201,64 @@ export default function PredictionForm() {
         {prediction && !loading && (
           <div className="animate-fade-slide w-full" style={{ animationDelay: "0.2s" }}>
             <ResultCard prediction={prediction} />
+          </div>
+        )}
+
+        {/* ─── OPTIONAL USER NAME/EMAIL POPUP MODAL ─── */}
+        {showPopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-slide">
+            <div className="bg-[#0b0f19] border border-zinc-800 rounded-3xl w-full max-w-md p-6 sm:p-8 space-y-6 shadow-2xl relative">
+              
+              <div className="space-y-2 text-center">
+                <h3 className="text-xl font-bold text-white" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  Optimize Your Predictions
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  If you provide your email and name, I can track your feedback in the system and improve results. Please explore the page and give Like/Dislike feedback. It motivates development.
+                </p>
+              </div>
+
+              <form onSubmit={handlePopupSubmit} className="space-y-4">
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Your Name (Optional)"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Your Email (Optional)"
+                    value={tempEmail}
+                    onChange={(e) => setTempEmail(e.target.value)}
+                    className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                  />
+                </div>
+
+                {popupError && (
+                  <div className="text-red-400 text-xs bg-red-950/30 border border-red-900/40 rounded-xl p-2.5">
+                    ⚠️ {popupError}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handlePopupSkip}
+                    className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-300 font-bold py-3 text-xs sm:text-sm rounded-xl border border-zinc-800 transition active:scale-[0.99] select-none"
+                  >
+                    Skip & Predict
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 text-xs sm:text-sm rounded-xl transition active:scale-[0.99] select-none"
+                  >
+                    Save & Predict
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>
