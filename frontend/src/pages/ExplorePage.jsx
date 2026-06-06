@@ -368,7 +368,7 @@ export default function ExplorePage() {
         setLoading(true);
         setError('');
         
-        const res = await fetchFilteredAnalytics(selectedCountries);
+        const res = await fetchFilteredAnalytics(selectedCountries, selectedEducationLevels, experienceRange);
         if (res?.data) {
           setAnalytics(res.data);
         }

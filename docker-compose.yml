@@ -3,7 +3,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "10000:10000"
     volumes:
       - ./backend/dataset:/app/dataset
       - ./backend/models:/app/models
@@ -13,6 +13,6 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"
+      - "5173:80"
     depends_on:
       - backend

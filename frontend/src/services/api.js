@@ -20,8 +20,10 @@ export const predictSalary = (data) => api.post('/api/predict', data);
 export const convertSalary = (original_salary_usd, target_currency) =>
   api.post('/api/convert-salary', null, { params: { original_salary_usd, target_currency } });
 export const getSupportedCurrencies = () => api.get('/api/currencies');
+export const convertSalariesBulk = (salaries_usd, target_currency) => api.post('/api/convert-salaries-bulk', { salaries_usd, target_currency });
 export const uploadCSV = (formData) => api.post('/api/upload-csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const fetchAnalytics = () => api.get('/api/analytics');
-export const fetchFilteredAnalytics = (countries) => api.post('/api/analytics/filter', { countries });
+export const fetchFilteredAnalytics = (countries, education_levels, experience_range) => api.post('/api/analytics/filter', { countries, education_levels, experience_range });
+export const submitFeedback = (data) => api.post('/api/feedback', data);
 
 export default api;

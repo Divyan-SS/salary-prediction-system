@@ -61,3 +61,11 @@ class AnalyticsResponse(BaseModel):
     education_salary_distribution: List[dict]
     country_distribution: List[CountryCount]
     education_salary_by_country: List[EducationSalaryByCountry]
+
+class BulkConversionRequest(BaseModel):
+    salaries_usd: List[float]
+    target_currency: str
+
+class BulkConversionResponse(BaseModel):
+    converted_salaries: List[float]
+    target_currency: str

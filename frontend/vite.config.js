@@ -6,12 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/predict': 'http://localhost:10000',
-      '/convert-salary': 'http://localhost:10000',
-      '/currencies': 'http://localhost:10000',
-      '/upload-csv': 'http://localhost:10000',
-      '/analytics': 'http://localhost:10000',
-      '/health': 'http://localhost:10000'
+      '/api': {
+        target: 'http://localhost:10000',
+        changeOrigin: true
+      }
     }
   }
 })

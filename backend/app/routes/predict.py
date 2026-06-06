@@ -8,7 +8,9 @@ import io
 from app.schemas.salary_schema import (
     PredictionRequest, 
     PredictionResponse, 
-    ConvertedSalaryResponse
+    ConvertedSalaryResponse,
+    BulkConversionRequest,
+    BulkConversionResponse
 )
 
 from app.ml.predict_salary import predict_salary
@@ -62,53 +64,7 @@ async def predict_salary_endpoint(request: PredictionRequest):
         logger.error(f"Prediction error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal prediction engine error")
 
-# =========================================================
-# 📤 BATCH CSV UPLOAD
-# =========================================================
-@router.post("/upload-csv")
-async def upload_csv_endpoint(file: UploadFile = File(...)):
-    try:
-        contents = await file.read()
-        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
-        
-        results = []
-        errors = []
-        
-        for index, row in df.iterrows():
-            try:
-                # Normalize Education
-                clean_edu = clean_education(row['EdLevel'])
-                if clean_edu is None:
-                    raise ValueError("Invalid education level")
 
-                # Perform Prediction
-                salary_usd = predict_salary(
-                    country=row['Country'],
-                    education=clean_edu,
-                    experience=row['YearsCodePro']
-                )
-
-                results.append({
-                    "Country": row['Country'],
-                    "EdLevel": clean_edu,
-                    "YearsCodePro": row['YearsCodePro'],
-                    "PredictedSalary": round(float(salary_usd), 2)
-                })
-            except Exception as e:
-                errors.append({
-                    "row": index + 2, # +2 to account for 0-index and header
-                    "country": row['Country'],
-                    "error": str(e)
-                })
-        
-        return {
-            "results": results,
-            "errors": errors,
-            "successful_predictions": len(results),
-            "total_rows": len(df)
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # =========================================================
 # 💱 CONVERT SALARY
@@ -122,6 +78,27 @@ async def convert_salary_endpoint(original_salary_usd: float, target_currency: s
             converted_salary=round(float(converted_salary), 2),
             original_currency="USD",
             target_currency=target_currency
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =========================================================
+# 💱 CONVERT SALARIES BULK
+# =========================================================
+@router.post("/convert-salaries-bulk", response_model=BulkConversionResponse)
+async def convert_salaries_bulk_endpoint(request: BulkConversionRequest):
+    try:
+        converted = []
+        for usd in request.salaries_usd:
+            if usd is None:
+                converted.append(0.0) # Placeholder for error rows
+            else:
+                val = await convert_currency(usd, request.target_currency)
+                converted.append(round(float(val), 2))
+                
+        return BulkConversionResponse(
+            converted_salaries=converted,
+            target_currency=request.target_currency
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

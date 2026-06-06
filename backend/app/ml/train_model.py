@@ -24,12 +24,21 @@ df = pd.read_csv(DATA_PATH)
 # =========================================================
 # 🧹 CLEAN DATA
 # =========================================================
+from app.ml.preprocessing import clean_experience, clean_education
+
 df = df[["Country", "EdLevel", "YearsCodePro", "ConvertedComp"]]
 df = df.dropna()
 
-# Convert experience safely
-df["YearsCodePro"] = pd.to_numeric(df["YearsCodePro"], errors="coerce")
-df = df.dropna()
+# Apply standard experience and education cleaning
+df["YearsCodePro"] = df["YearsCodePro"].apply(clean_experience)
+df["EdLevel"] = df["EdLevel"].apply(clean_education)
+df = df.dropna(subset=["EdLevel"])
+
+# Group low-frequency countries (consistent with analytics)
+country_counts = df['Country'].value_counts()
+country_map = {idx: (idx if val >= 400 else 'Other') for idx, val in country_counts.items()}
+df['Country'] = df['Country'].map(country_map)
+df = df[df['Country'] != 'Other']
 
 # Remove extreme outliers (important for ML stability)
 df = df[(df["ConvertedComp"] > 1000) & (df["ConvertedComp"] < 500000)]

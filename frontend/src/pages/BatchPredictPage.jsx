@@ -1,7 +1,7 @@
 // frontend/src/pages/BatchPredictPage.jsx
 import { useEffect, useRef, useState } from 'react';
 import CsvUploader from '../components/CsvUploader';
-import { uploadCSV, convertSalary, getSupportedCurrencies } from '../services/api';
+import { uploadCSV, convertSalary, convertSalariesBulk, getSupportedCurrencies } from '../services/api';
 import toast from 'react-hot-toast';
 
 // ─── Zoom-Adaptive Deep Navy Neural Matrix Background ────────
@@ -274,19 +274,23 @@ export default function BatchPredictPage() {
         return;
       }
 
-      const converted = await Promise.all(
-        batchData.results.map(async (row) => {
-          const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
-          if (typeof baseUsd !== 'number') {
-            return { ...row, Converted_Salary: null };
-          }
-          const response = await convertSalary(baseUsd, targetCurrency);
-          return {
-            ...row,
-            Converted_Salary: response.data.converted_salary ?? response.data.predicted_salary,
-          };
-        })
-      );
+      // Collect all USD prediction values for bulk conversion
+      const salariesUsd = batchData.results.map((row) => {
+        const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
+        return typeof baseUsd === 'number' ? baseUsd : null;
+      });
+
+      const response = await convertSalariesBulk(salariesUsd, targetCurrency);
+      const convertedSalaries = response.data.converted_salaries;
+
+      const converted = batchData.results.map((row, idx) => {
+        const baseUsd = row.Predicted_Salary_USD ?? row.PredictedSalary;
+        return {
+          ...row,
+          Converted_Salary: typeof baseUsd === 'number' ? convertedSalaries[idx] : null,
+        };
+      });
+
       setConvertedResults(converted);
       toast.success(`Batch successfully mapped to ${targetCurrency}`);
     } catch (err) {

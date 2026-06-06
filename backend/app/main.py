@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import predict, upload, analytics, health
+from app.routes import predict, upload, analytics, health, feedback
 import traceback
 
 # =========================================================
@@ -35,6 +35,7 @@ app.include_router(predict.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(health.router, prefix="/api")
+app.include_router(feedback.router, prefix="/api")
 
 @app.get("/")
 def root():

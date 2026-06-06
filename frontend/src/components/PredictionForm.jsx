@@ -33,7 +33,13 @@ export default function PredictionForm() {
       };
 
       const response = await predictSalary(payload);
-      setPrediction(response.data);
+      setPrediction({
+        ...response.data,
+        country: country,
+        education: uiEducation,
+        experience: parseFloat(experience),
+        prediction_id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
+      });
     } catch (err) {
       console.error("Prediction Handshake Error:", err);
       setError(err.response?.data?.detail || "Prediction failed. Check network pipelines or server status keys.");

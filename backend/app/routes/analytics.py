@@ -96,10 +96,17 @@ def build_analytics_payload(df):
 
 class FilterRequest(BaseModel):
     countries: List[str]
+    education_levels: List[str] = None
+    experience_range: List[float] = None
 
 @router.post("/analytics/filter")
 async def get_filtered_analytics(payload: FilterRequest):
     df = load_and_clean_data()
     if payload.countries:
         df = df[df['Country'].isin(payload.countries)]
+    if payload.education_levels:
+        df = df[df['EdLevel'].isin(payload.education_levels)]
+    if payload.experience_range and len(payload.experience_range) == 2:
+        min_exp, max_exp = payload.experience_range
+        df = df[(df['YearsCodePro'] >= min_exp) & (df['YearsCodePro'] <= max_exp)]
     return build_analytics_payload(df)

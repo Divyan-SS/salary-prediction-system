@@ -58,19 +58,34 @@ CURRENCY_NAME_MAP: Dict[str, str] = {
     "AED": "UAE Dirham",
 }
 
+import time
+
+_rates_cache = {}
+_cache_time = 0.0
+CACHE_TTL = 43200  # 12 Hours in seconds
+
 async def get_exchange_rates() -> Dict[str, float]:
+    global _rates_cache, _cache_time
+    now = time.time()
+    if _rates_cache and (now - _cache_time < CACHE_TTL):
+        return _rates_cache
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(EXCHANGE_RATE_API_URL, timeout=5)
-            response.raise_for_status()  # Raise an exception for bad status codes
+            response.raise_for_status()
             data = response.json()
-            return data.get("rates", {})
-    except httpx.RequestError as e:
-        print(f"HTTPX RequestError: {e}. Using fallback rates.")
-        return FALLBACK_RATES
+            rates = data.get("rates", {})
+            if rates:
+                _rates_cache = rates
+                _cache_time = now
+                return rates
     except Exception as e:
-        print(f"An unexpected error occurred: {e}. Using fallback rates.")
-        return FALLBACK_RATES
+        print(f"Failed to fetch exchange rates: {e}. Using cache or fallback rates.")
+        if _rates_cache:
+            return _rates_cache
+            
+    return FALLBACK_RATES
 
 async def convert_currency(amount_usd: float, target_currency: str) -> float:
     if target_currency == "USD":

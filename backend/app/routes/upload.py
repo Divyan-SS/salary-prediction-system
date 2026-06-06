@@ -29,8 +29,8 @@ async def upload_csv(file: UploadFile = File(...)):
             csv_row = idx + 2
             salary, error = safe_predict_salary(row['Country'], row['EdLevel'], row['YearsCodePro'])
             if salary is None:
-                predictions.append("can't predict")
-                errors.append({"row": csv_row, "error": error})
+                predictions.append(None)
+                errors.append({"row": csv_row, "country": row['Country'], "error": error})
             else:
                 predictions.append(round(salary, 2))
 
@@ -42,7 +42,7 @@ async def upload_csv(file: UploadFile = File(...)):
             "results": results,
             "errors": errors,
             "total_rows": len(df),
-            "successful_predictions": len([p for p in predictions if p != "can't predict"]),
+            "successful_predictions": len([p for p in predictions if p is not None]),
             "failed_predictions": len(errors)
         }
     except Exception as e:
