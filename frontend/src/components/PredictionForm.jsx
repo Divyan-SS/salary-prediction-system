@@ -23,6 +23,7 @@ export default function PredictionForm() {
   const [tempName, setTempName] = useState("");
   const [tempEmail, setTempEmail] = useState("");
   const [popupError, setPopupError] = useState("");
+  const [confirmCheck, setConfirmCheck] = useState(false);
 
   const validateEmail = (email) => {
     if (!email) return false;
@@ -77,6 +78,7 @@ export default function PredictionForm() {
       handlePredictTrigger();
     } else {
       // Intercept and show the optional info modal
+      setConfirmCheck(false);
       setShowPopup(true);
     }
   };
@@ -219,6 +221,15 @@ export default function PredictionForm() {
               </div>
 
               <form onSubmit={handlePopupSubmit} className="space-y-4">
+                
+                {/* Prediction Context */}
+                <div className="bg-zinc-950/40 border border-zinc-800 rounded-2xl p-4 text-left space-y-2 text-xs">
+                  <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider">Prediction Context</div>
+                  <div>Country: <span className="font-semibold text-white">{country}</span></div>
+                  <div>Education Level: <span className="font-semibold text-white">{uiEducation}</span></div>
+                  <div>Experience: <span className="font-semibold text-white">{experience} Years</span></div>
+                </div>
+
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -236,6 +247,20 @@ export default function PredictionForm() {
                   />
                 </div>
 
+                {/* Confirmation Checkbox */}
+                <div className="flex items-start gap-2.5 pt-1">
+                  <input
+                    type="checkbox"
+                    id="popup-confirm"
+                    checked={confirmCheck}
+                    onChange={(e) => setConfirmCheck(e.target.checked)}
+                    className="mt-0.5 rounded border-zinc-800 text-sky-500 bg-zinc-950/60 focus:ring-sky-500 focus:ring-offset-0 cursor-pointer"
+                  />
+                  <label htmlFor="popup-confirm" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
+                    I confirm these details are correct and belong to my prediction session
+                  </label>
+                </div>
+
                 {popupError && (
                   <div className="text-red-400 text-xs bg-red-950/30 border border-red-900/40 rounded-xl p-2.5">
                     ⚠️ {popupError}
@@ -246,13 +271,15 @@ export default function PredictionForm() {
                   <button
                     type="button"
                     onClick={handlePopupSkip}
-                    className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-300 font-bold py-3 text-xs sm:text-sm rounded-xl border border-zinc-800 transition active:scale-[0.99] select-none"
+                    disabled={!confirmCheck}
+                    className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-300 font-bold py-3 text-xs sm:text-sm rounded-xl border border-zinc-800 transition active:scale-[0.99] select-none disabled:opacity-40"
                   >
                     Skip & Predict
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 text-xs sm:text-sm rounded-xl transition active:scale-[0.99] select-none"
+                    disabled={!confirmCheck}
+                    className="flex-1 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 text-xs sm:text-sm rounded-xl transition active:scale-[0.99] select-none disabled:opacity-40"
                   >
                     Save & Predict
                   </button>

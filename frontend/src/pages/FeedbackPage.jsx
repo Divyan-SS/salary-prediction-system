@@ -18,6 +18,7 @@ export default function FeedbackPage() {
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [showUserInputs, setShowUserInputs] = useState(true);
+  const [confirmCheck, setConfirmCheck] = useState(false);
 
   useEffect(() => {
     // 1. Load recent prediction if it exists
@@ -141,7 +142,7 @@ export default function FeedbackPage() {
             User Feedback
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-            Your insights directly motivate development and help retrain our machine learning regression engines.
+            Your thoughts and experience help us refine our salary estimator and make predictions better for everyone.
           </p>
         </div>
 
@@ -168,49 +169,10 @@ export default function FeedbackPage() {
         ) : (
           <div className="bg-zinc-900/45 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl">
             
-            {/* Prediction Context Display */}
-            {prediction ? (
-              <div className="bg-zinc-950/40 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
-                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2.5">
-                  <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">Active Prediction Context</span>
-                  <span className="text-[10px] text-slate-500 font-mono">ID: {prediction.prediction_id ? `${prediction.prediction_id.slice(0, 8)}...` : "N/A"}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase">Country</span>
-                    <span className="font-semibold text-white">{prediction.country}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase">Education</span>
-                    <span className="font-semibold text-white">{prediction.education}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase">Experience</span>
-                    <span className="font-semibold text-white">{prediction.experience} Years</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase">Predicted Salary</span>
-                    <span className="font-semibold text-emerald-400 font-mono">
-                      {formatCurrency(prediction.predicted_salary, prediction.currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-zinc-950/30 border border-dashed border-zinc-800 rounded-2xl p-4 text-center">
-                <p className="text-xs text-slate-400">
-                  No recent prediction session found. You are submitting **General App Feedback**.
-                </p>
-                <Link to="/" className="text-xs text-sky-400 hover:text-sky-300 font-semibold underline mt-1.5 inline-block">
-                  Run a salary prediction first →
-                </Link>
-              </div>
-            )}
-
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              {/* Like/Dislike Buttons */}
+              {/* 1. Rate the Application / Result */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Rate the Application / Result</label>
                 <div className="flex gap-3">
@@ -257,27 +219,68 @@ export default function FeedbackPage() {
                 </div>
               )}
 
+              {/* 2. Active Prediction Context */}
+              {prediction ? (
+                <div className="bg-zinc-950/40 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2.5">
+                    <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">Active Prediction Context</span>
+                    <span className="text-[10px] text-slate-500 font-mono">ID: {prediction.prediction_id ? `${prediction.prediction_id.slice(0, 8)}...` : "N/A"}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase">Country</span>
+                      <span className="font-semibold text-white">{prediction.country}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase">Education</span>
+                      <span className="font-semibold text-white">{prediction.education}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase">Experience</span>
+                      <span className="font-semibold text-white">{prediction.experience} Years</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase">Predicted Salary</span>
+                      <span className="font-semibold text-emerald-400 font-mono">
+                        {formatCurrency(prediction.predicted_salary, prediction.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-zinc-950/30 border border-dashed border-zinc-800 rounded-2xl p-4 text-center">
+                  <p className="text-xs text-slate-400">
+                    No recent prediction session found. You are submitting **General App Feedback**.
+                  </p>
+                  <Link to="/" className="text-xs text-sky-400 hover:text-sky-300 font-semibold underline mt-1.5 inline-block">
+                    Run a salary prediction first →
+                  </Link>
+                </div>
+              )}
+
               {/* Explanations & Suggestions */}
               {isLiked !== null && (
                 <div className="space-y-4 animate-fade-slide">
+                  {/* 3. Explain Details (Optional) */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Explain details (Optional)</label>
                     <textarea
                       value={textExplanation}
                       onChange={(e) => setTextExplanation(e.target.value)}
                       rows={3}
-                      placeholder={isLiked ? "Share what worked well or general comments..." : "Describe why the prediction seems incorrect..."}
+                      placeholder={isLiked ? "Tell us what you liked about the estimate or share any comments..." : "Help us understand what looked incorrect..."}
                       className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                     />
                   </div>
 
+                  {/* 4. Improvement Suggestions (Optional) */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Improvement suggestions (Optional)</label>
                     <textarea
                       value={improvementSuggestion}
                       onChange={(e) => setImprovementSuggestion(e.target.value)}
                       rows={3}
-                      placeholder="How can we make this system or predictions better?"
+                      placeholder="Share your suggestions to improve predictions or overall experience"
                       className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                     />
                   </div>
@@ -314,10 +317,24 @@ export default function FeedbackPage() {
                 </div>
               )}
 
-              {/* Non-Optional Submit button */}
+              {/* Confirmation Checkbox */}
+              <div className="border-t border-zinc-800/80 pt-4 flex items-start gap-2.5 animate-fade-slide">
+                <input
+                  type="checkbox"
+                  id="feedback-confirm"
+                  checked={confirmCheck}
+                  onChange={(e) => setConfirmCheck(e.target.checked)}
+                  className="mt-0.5 rounded border-zinc-800 text-sky-500 bg-zinc-950/60 focus:ring-sky-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <label htmlFor="feedback-confirm" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
+                  I confirm these details are correct and belong to my prediction session
+                </label>
+              </div>
+
+              {/* Submit button */}
               <button
                 type="submit"
-                disabled={loading || isLiked === null || (isLiked === false && !dislikeReason)}
+                disabled={loading || isLiked === null || (isLiked === false && !dislikeReason) || !confirmCheck}
                 className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl transition-all shadow-md disabled:opacity-40 select-none active:scale-[0.99]"
               >
                 {loading ? "Submitting Feedback..." : "Submit Feedback"}
