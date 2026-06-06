@@ -71,8 +71,8 @@ async def predict_salary_endpoint(request: PredictionRequest):
             }
         }
         
-        # 10-minute decision window (600 seconds TTL)
-        state_store.set(prediction_id, payload, 600)
+        # 5-minute decision window (300 seconds TTL)
+        state_store.set(prediction_id, payload, 300)
 
         return PredictionResponse(
             predicted_salary=round(float(converted_salary), 2),
