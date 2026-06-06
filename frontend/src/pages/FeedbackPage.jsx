@@ -400,7 +400,7 @@ export default function FeedbackPage() {
 
       {/* Footer Details */}
       <div className="mt-8 text-center text-[10px] text-slate-500 z-10">
-        Salary Prediction Feedback Engine v1.1.0 • Stateless SMTP Delivery
+        Salary Prediction Feedback Engine v1.1.0 • Secure HTTPS API Delivery
       </div>
     </div>
   );
