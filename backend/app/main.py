@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import predict, upload, analytics, health, feedback
-import traceback
 
 # =========================================================
 # 🚀 APP INIT

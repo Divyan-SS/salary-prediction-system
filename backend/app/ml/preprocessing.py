@@ -1,7 +1,7 @@
-import pickle
-import numpy as np
 import re
 from pathlib import Path
+import joblib
+import pandas as pd
 
 # =========================================================
 # 📦 MODEL PATH (RENDER SAFE)
@@ -10,12 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 _MODEL_PATH = BASE_DIR / "models" / "saved_steps.pkl"
 
 _model_data = None
-
-# =========================================================
-# ⚡ LOAD MODEL ONCE
-# =========================================================
-import joblib
-import pandas as pd
 
 # =========================================================
 # ⚡ LOAD MODEL ONCE

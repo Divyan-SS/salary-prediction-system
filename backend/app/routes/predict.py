@@ -1,8 +1,6 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException
 from typing import Dict
 import logging
-import pandas as pd
-import io
 
 # 🌟 FIX: Absolute imports based on Root Directory = 'backend'
 from app.schemas.salary_schema import (

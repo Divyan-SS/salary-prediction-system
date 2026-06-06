@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.ml.predict_salary import safe_predict_salary
