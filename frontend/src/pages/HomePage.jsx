@@ -276,7 +276,7 @@ export default function HomePage() {
         <NeuralCanvas />
 
         {/* ─── SECTION 1: HERO & CORE NAVIGATION APPS ─── */}
-        <section className="min-h-screen w-full max-w-[936px] mx-auto px-4 py-16 sm:py-24 md:py-12 flex flex-col justify-center relative z-10">
+        <section className="w-full max-w-[936px] mx-auto px-4 py-10 sm:py-16 flex flex-col justify-center relative z-10">
           <div className="text-center max-w-3xl mx-auto">
             <div className="animate-float inline-flex items-center gap-2 bg-sky-500/10 backdrop-blur-md rounded-full px-4 py-1.5 sm:px-5 sm:py-2 border border-sky-500/20 shadow-sm mb-5 sm:mb-6">
               <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
@@ -297,7 +297,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 sm:mt-16 md:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-[360px] sm:max-w-full mx-auto">
+          <div className="mt-8 sm:mt-12 md:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-[360px] sm:max-w-full mx-auto">
             <Link to="/individual" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group">
                 <div className="absolute w-full h-[140px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[20px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
@@ -378,10 +378,10 @@ export default function HomePage() {
         </section>
 
         {/* ─── SECTION 2: SYSTEM ARCHITECTURE GRAPHICS ─── */}
-        <section className="w-full max-w-[1100px] mx-auto py-16 sm:py-24 px-4 sm:px-6 relative z-10 border-t border-white/5">
+        <section className="w-full max-w-[1100px] mx-auto py-10 sm:py-16 px-4 sm:px-6 relative z-10 border-t border-white/5">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-8 sm:mb-12"
           >
             <h2 className="text-xs sm:text-sm font-bold tracking-widest text-sky-400 uppercase mb-2">01 // Engineering</h2>
             <h3 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight px-2" style={{ fontFamily: "var(--font-display)" }}>
@@ -452,10 +452,10 @@ export default function HomePage() {
         </section>
 
         {/* ─── SECTION 3: WORKFLOW PIPELINE INTERACTION ─── */}
-        <section className="w-full max-w-[936px] mx-auto py-16 sm:py-24 px-4 relative z-10">
+        <section className="w-full max-w-[936px] mx-auto py-10 sm:py-16 px-4 relative z-10">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-8 sm:mb-12"
           >
             <h2 className="text-xs sm:text-sm font-bold tracking-widest text-purple-400 uppercase mb-2">02 // Data Lifecycle</h2>
             <h3 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight px-2" style={{ fontFamily: "var(--font-display)" }}>
@@ -527,10 +527,10 @@ export default function HomePage() {
         </section>
 
         {/* ─── SECTION 4: USER EXECUTION MATRIX MANUAL ─── */}
-        <section className="w-full max-w-[1100px] mx-auto py-16 sm:py-24 px-4 sm:px-6 relative z-10 border-t border-white/5">
+        <section className="w-full max-w-[1100px] mx-auto py-10 sm:py-16 px-4 sm:px-6 relative z-10 border-t border-white/5">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUpVariants}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-8 sm:mb-12"
           >
             <h2 className="text-xs sm:text-sm font-bold tracking-widest text-emerald-400 uppercase mb-2">03 // Run Operations</h2>
             <h3 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight px-2" style={{ fontFamily: "var(--font-display)" }}>
@@ -606,7 +606,7 @@ npm run dev
         </section>
 
         {/* ─── SECTION 5: FINAL SYSTEM CTA PANEL ─── */}
-        <section className="w-full max-w-[936px] mx-auto py-16 sm:py-24 px-4 text-center relative z-10 border-t border-white/5">
+        <section className="w-full max-w-[936px] mx-auto py-10 sm:py-16 px-4 text-center relative z-10 border-t border-white/5">
           <div className="relative flex flex-col justify-start items-start w-full max-w-2xl group mx-auto">
             <div className="absolute w-full h-full opacity-25 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%)', filter: 'blur(45px)' }} />
             <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%) border-box' }}>
