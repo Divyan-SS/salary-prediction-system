@@ -140,17 +140,35 @@ def send_admin_feedback_email(
         logger.error("Cannot dispatch admin notification: SMTP_RECEIVER environment variable is not defined.")
         return False
 
-    user_label = user_name.strip() if user_name and user_name.strip() else f"ID: {prediction_id[:8]}"
-
     if timeout_event:
-        subject = f"Prediction Feedback Timeout - User did not respond ({user_label})"
-        header_title = "User Did Not Respond"
+        subject = "Prediction Feedback Timeout - No Feedback Received"
+        header_title = "Prediction Feedback Timeout - No Feedback Received"
         header_color = "#9ca3af"
     else:
-        prefix = "UPDATED" if is_edit else "New"
-        subject = f"{prefix} Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({user_label})"
-        header_title = f"{prefix} Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
+        subject = f"New Prediction Feedback - {'Liked 👍' if is_liked else 'Disliked 👎'} ({user_name})"
+        header_title = f"New Prediction Feedback: {'Liked 👍' if is_liked else 'Disliked 👎'}"
         header_color = "#10b981" if is_liked else "#ef4444"
+
+    if timeout_event:
+        details_html = f"""
+        <ul>
+            <li><strong>Country:</strong> {country}</li>
+            <li><strong>Education Level:</strong> {education}</li>
+            <li><strong>Experience:</strong> {experience} Years</li>
+            <li><strong>Predicted Salary (USD):</strong> ${predicted_salary_usd:,.2f}</li>
+        </ul>
+        """
+    else:
+        details_html = f"""
+        <ul>
+            <li><strong>Country:</strong> {country}</li>
+            <li><strong>Education Level:</strong> {education}</li>
+            <li><strong>Experience:</strong> {experience} Years</li>
+            <li><strong>Predicted Salary (USD):</strong> ${predicted_salary_usd:,.2f}</li>
+            <li><strong>User Name:</strong> {user_name}</li>
+            <li><strong>User Email:</strong> {user_email}</li>
+        </ul>
+        """
     
     html = f"""
     <html>
@@ -162,14 +180,7 @@ def send_admin_feedback_email(
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         
         <h3>Context Details:</h3>
-        <ul>
-            <li><strong>Country:</strong> {country}</li>
-            <li><strong>Education Level:</strong> {education}</li>
-            <li><strong>Experience:</strong> {experience} Years</li>
-            <li><strong>Predicted Salary (USD):</strong> ${predicted_salary_usd:,.2f}</li>
-            <li><strong>User Name:</strong> {user_name or 'Anonymous'}</li>
-            <li><strong>User Email:</strong> {user_email or 'Not Provided'}</li>
-        </ul>
+        {details_html}
 
         {f'''
         <h3>Dislike Reason:</h3>
@@ -201,41 +212,66 @@ def send_admin_feedback_email(
     return send_email(SMTP_RECEIVER, subject, html)
 
 # =========================================================
-# 💖 USER THANK YOU EMAIL FORMATTER (CASE A)
+# 💖 USER THANK YOU EMAIL FORMATTER
 # =========================================================
-def send_user_thank_you_email(user_email: str, user_name: str = None, is_edit: bool = False) -> bool:
+def send_user_thank_you_email(
+    user_email: str, 
+    user_name: str = None, 
+    is_edit: bool = False,
+    country: str = None,
+    education: str = None,
+    experience: float = None,
+    predicted_salary: float = None,
+    predicted_salary_usd: float = None,
+    currency: str = None
+) -> bool:
     """
-    Sends a thank you email containing developer information and portfolio links (Case A).
+    Sends a thank you email containing developer information and portfolio links.
     """
-    subject = "Updated: Thank you for your feedback" if is_edit else "Thank you for your feedback"
-    header_title = "Your Updated Feedback!" if is_edit else "Thank You for Your Feedback!"
-    header_color = "#4f46e5" if is_edit else "#10b981"
+    subject = "Thank you for your feedback"
+    header_title = "Thank You for Your Feedback!"
+    header_color = "#10b981"
     recipient_name = user_name if user_name else "Developer"
     
+    # Conditional Prediction Summary HTML section
+    prediction_summary_html = ""
+    if country and education and experience is not None and predicted_salary is not None:
+        prediction_summary_html = f"""
+        <div style="background-color: #f3f4f6; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h4 style="margin-top: 0; color: #1e3a8a; font-size: 16px; margin-bottom: 10px;">Prediction Summary</h4>
+            <ul style="list-style-type: none; padding-left: 0; margin: 0; font-size: 14px; color: #374151; line-height: 1.8;">
+                <li><strong>Country:</strong> {country}</li>
+                <li><strong>Education Level:</strong> {education}</li>
+                <li><strong>Experience (Years):</strong> {experience}</li>
+                <li><strong>Predicted Salary (Local Currency):</strong> {currency} {predicted_salary:,.2f}</li>
+                <li><strong>Equivalent Salary (USD):</strong> ${predicted_salary_usd:,.2f}</li>
+            </ul>
+        </div>
+        """
+        
     html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: {header_color};">{header_title}</h2>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p>Hello {recipient_name},</p>
-        <p>Thank you for submitting feedback on the Salary Prediction System. Your response has been recorded.</p>
-        <p>Feedback like yours is essential to help continuously train and refine our machine learning models, leading to better predictions and overall system performance.</p>
+        <p>Thank you for submitting your feedback. Your response has been recorded successfully.</p>
+        <p>Your feedback helps us monitor prediction quality, enhance the overall user experience, and guide continuous system improvements.</p>
+        
+        {prediction_summary_html}
         
         <div style="background-color: #f9fafb; border-left: 4px solid #6366f1; padding: 15px; margin: 20px 0; border-radius: 4px;">
             <h4 style="margin-top: 0; color: #4f46e5; font-size: 16px;">About the Developer</h4>
-            <p style="font-size: 14px; margin-bottom: 15px;">
-                <strong>Name:</strong> Divyan S<br />
+            <p style="font-size: 14px; margin-bottom: 0;">
+                <strong>Divyan S</strong><br />
                 <strong>GitHub:</strong> <a href="https://github.com/Divyan-SS" target="_blank" style="color: #4f46e5; text-decoration: none;">github.com/Divyan-SS</a><br />
                 <strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/divyan-s" target="_blank" style="color: #4f46e5; text-decoration: none;">linkedin.com/in/divyan-s</a>
-            </p>
-            <p style="font-size: 13px; color: #555; line-height: 1.5; font-style: italic; margin-bottom: 0;">
-                Divyan S is a passionate Software Developer specializing in building scalable web applications and integrating advanced machine learning pipelines. Committed to open-source contributions and continuous architecture improvement.
             </p>
         </div>
 
         <p>We appreciate your time and support!</p>
         <br />
-        <p>Best regards,<br /><strong>project Team</strong></p>
+        <p>Best regards,<br /><strong>Project Team</strong></p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
     </body>

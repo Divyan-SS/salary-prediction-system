@@ -224,11 +224,32 @@ async def submit_feedback(request: FeedbackRequest, background_tasks: Background
     )
 
     if user_email and is_valid_email(user_email):
+        country = pred_data.get("country") or request.country.strip()
+        education = pred_data.get("education") or request.education.strip()
+        experience = pred_data.get("experience") or request.experience
+        salary_usd = pred_data.get("predicted_salary_usd") or request.predicted_salary_usd
+
+        # Convert to local currency asynchronously before scheduling background email task
+        from app.services.currency_service import get_country_currency, convert_currency
+        target_currency = get_country_currency(country)
+        try:
+            local_salary = await convert_currency(salary_usd, target_currency)
+        except Exception as e:
+            logger.error(f"Error converting salary for user thank you email summary: {str(e)}")
+            local_salary = salary_usd
+            target_currency = "USD"
+
         background_tasks.add_task(
             send_user_thank_you_email,
             user_email=user_email,
             user_name=user_name,
-            is_edit=False
+            is_edit=False,
+            country=country,
+            education=education,
+            experience=experience,
+            predicted_salary=round(float(local_salary), 2),
+            predicted_salary_usd=round(float(salary_usd), 2),
+            currency=target_currency
         )
 
     return {"status": "success", "message": "Feedback submitted successfully"}
