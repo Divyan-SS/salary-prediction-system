@@ -18,8 +18,18 @@ export default function FeedbackPage() {
   const [error, setError] = useState("");
 
   // Google Sign-In States
-  const [googleIdToken, setGoogleIdToken] = useState("");
-  const [googleUser, setGoogleUser] = useState(null);
+  const [googleIdToken, setGoogleIdToken] = useState(() => sessionStorage.getItem("google_id_token") || "");
+  const [googleUser, setGoogleUser] = useState(() => {
+    const stored = sessionStorage.getItem("google_user");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
   const [confirmCheck, setConfirmCheck] = useState(false);
 
   // Dynamic Google Sign-In script injection and initialization
@@ -104,6 +114,7 @@ export default function FeedbackPage() {
   const handleCredentialResponse = (response) => {
     const token = response.credential;
     setGoogleIdToken(token);
+    sessionStorage.setItem("google_id_token", token);
 
     try {
       const base64Url = token.split('.')[1];
@@ -116,10 +127,12 @@ export default function FeedbackPage() {
       );
       
       const decoded = JSON.parse(jsonPayload);
-      setGoogleUser({
+      const userObj = {
         name: decoded.name,
         email: decoded.email
-      });
+      };
+      setGoogleUser(userObj);
+      sessionStorage.setItem("google_user", JSON.stringify(userObj));
       toast.success("Authenticated with Google successfully!");
     } catch (e) {
       console.error("Google ID Token decoding error:", e);
@@ -418,7 +431,7 @@ export default function FeedbackPage() {
                 ) : (
                   <div className="bg-zinc-950/40 border border-zinc-800/80 rounded-2xl p-5 text-center space-y-4">
                     <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 leading-relaxed max-w-sm mx-auto font-bold">
-                      ⚠️ Google Sign-In is required to verify your email address for communication and feedback records. We do not store passwords or Google credentials.
+                      ⚠️ Google Sign-In is required to verify your email address for communication and feedback records only. We do not store passwords or Google credentials.
                     </p>
                     <div className="flex justify-center" id="google-signin-btn"></div>
                   </div>
