@@ -255,7 +255,7 @@ export default function FeedbackPage() {
                 No Prediction Session Found
               </h2>
               <p className="text-xs sm:text-sm text-slate-400">
-                To submit feedback, please run a salary prediction first. This verification helps us keep our feedback database accurate.
+                To submit feedback, please run a salary prediction first. This verification helps us keep our feedback submissions accurate.
               </p>
             </div>
             <div className="flex justify-center">
@@ -484,7 +484,7 @@ export default function FeedbackPage() {
                 ) : (
                   <div className="bg-zinc-950/40 border border-zinc-800/80 rounded-2xl p-5 text-center space-y-4">
                     <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 leading-relaxed max-w-sm mx-auto font-bold">
-                      ⚠️ Google Sign-In is required to verify your email address for communication and feedback records only. We do not store passwords or Google credentials.
+                      ⚠️ Google Sign-In is required to verify your email address for communication and feedback records only. Passwords and credentials are never collected or kept.
                     </p>
                     <div className="flex justify-center" id="google-signin-btn"></div>
                   </div>
