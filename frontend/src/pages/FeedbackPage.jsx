@@ -30,7 +30,7 @@ export default function FeedbackPage() {
     }
     return null;
   });
-  const [confirmCheck, setConfirmCheck] = useState(false);
+
 
   // Dynamic Google Sign-In script injection and initialization
   useEffect(() => {
@@ -151,6 +151,14 @@ export default function FeedbackPage() {
 
     if (!googleIdToken) {
       setError("Please sign in with Google to submit feedback.");
+      const btnElement = document.getElementById("google-signin-btn");
+      if (btnElement) {
+        btnElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        btnElement.classList.add("ring-2", "ring-amber-500", "ring-offset-2", "ring-offset-[#070B19]", "rounded-lg", "transition-all");
+        setTimeout(() => {
+          btnElement.classList.remove("ring-2", "ring-amber-500", "ring-offset-2", "ring-offset-[#070B19]", "rounded-lg", "transition-all");
+        }, 3000);
+      }
       return;
     }
 
@@ -438,24 +446,10 @@ export default function FeedbackPage() {
                 )}
               </div>
 
-              {/* Confirmation Checkbox */}
-              <div className="border-t border-zinc-800/80 pt-4 flex items-start gap-2.5 animate-fade-slide">
-                <input
-                  type="checkbox"
-                  id="feedback-confirm"
-                  checked={confirmCheck}
-                  onChange={(e) => setConfirmCheck(e.target.checked)}
-                  className="mt-0.5 rounded border-zinc-800 text-sky-500 bg-zinc-950/60 focus:ring-sky-500 focus:ring-offset-0 cursor-pointer"
-                />
-                <label htmlFor="feedback-confirm" className="text-xs text-slate-300 leading-normal select-none cursor-pointer">
-                  I confirm these details are correct and belong to my prediction session
-                </label>
-              </div>
-
               {/* Submit button */}
               <button
                 type="submit"
-                disabled={loading || isLiked === null || !confirmCheck || !googleIdToken}
+                disabled={loading || isLiked === null}
                 className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-3 sm:py-3.5 text-xs sm:text-sm rounded-xl transition-all shadow-md disabled:opacity-40 select-none active:scale-[0.99]"
               >
                 {loading ? "Submitting Feedback..." : "Submit Feedback"}
