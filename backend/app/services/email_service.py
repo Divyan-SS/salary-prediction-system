@@ -235,7 +235,7 @@ def send_user_thank_you_email(user_email: str, user_name: str = None, is_edit: b
 
         <p>We appreciate your time and support!</p>
         <br />
-        <p>Best regards,<br /><strong>Salary Prediction Team</strong></p>
+        <p>Best regards,<br /><strong>project Team</strong></p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
     </body>

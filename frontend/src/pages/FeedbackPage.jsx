@@ -140,6 +140,15 @@ export default function FeedbackPage() {
     }
   };
 
+  const handleEditEmail = (e) => {
+    if (e) e.preventDefault();
+    setGoogleUser(null);
+    setGoogleIdToken("");
+    sessionStorage.removeItem("google_user");
+    sessionStorage.removeItem("google_id_token");
+    toast.success("Identity cleared. You can now sign in with another Google account.");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -197,6 +206,7 @@ export default function FeedbackPage() {
 
       await submitFeedback(payload);
       
+      sessionStorage.removeItem("recent_prediction"); // Clear prediction context to prevent resubmission
       setSubmitted(true);
       setJustSubmitted(true);
       toast.success("Thank you for your feedback!");
@@ -233,7 +243,31 @@ export default function FeedbackPage() {
           </p>
         </div>
 
-        {error && error.includes("Session expired") ? (
+        {!prediction && !loading ? (
+          <div className="bg-zinc-900/60 border border-amber-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
+            <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                No Prediction Session Found
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                To submit feedback, please run a salary prediction first. This verification helps us keep our feedback database accurate.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Link
+                to="/"
+                className="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-md select-none text-xs sm:text-sm flex items-center justify-center active:scale-[0.99]"
+              >
+                Make a Prediction
+              </Link>
+            </div>
+          </div>
+        ) : error && error.includes("Session expired") ? (
           <div className="bg-zinc-900/60 border border-red-500/30 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl animate-fade-slide">
             <div className="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -428,10 +462,21 @@ export default function FeedbackPage() {
                 </div>
                 
                 {googleUser ? (
-                  <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 text-left space-y-1.5 animate-fade-slide">
-                    <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Identity Details</div>
-                    <div className="text-xs sm:text-sm text-slate-300">Name: <span className="font-semibold text-white">{googleUser.name}</span></div>
-                    <div className="text-xs sm:text-sm text-slate-300">Email: <span className="font-semibold text-white">{googleUser.email}</span></div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 text-left space-y-1.5 animate-fade-slide relative">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Identity Details</div>
+                        <div className="text-xs sm:text-sm text-slate-300 mt-1">Name: <span className="font-semibold text-white">{googleUser.name}</span></div>
+                        <div className="text-xs sm:text-sm text-slate-300">Email: <span className="font-semibold text-white">{googleUser.email}</span></div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleEditEmail}
+                        className="text-[10px] sm:text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 transition text-sky-400 shrink-0 select-none"
+                      >
+                        Edit Email
+                      </button>
+                    </div>
                     <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 mt-1.5 select-none">
                       ✓ Verified by Google
                     </div>
