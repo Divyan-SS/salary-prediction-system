@@ -274,12 +274,12 @@ export default function FeedbackPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h2 className="text-xl sm:text-2xl font-bold text-white">
                 You have already submitted feedback for this prediction.
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400">
-                To submit feedback on a new result, please run another salary prediction calculation.
+              <p className="text-xs sm:text-sm text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 inline-block font-medium">
+                💡 To submit feedback on a new result, please run another salary prediction calculation.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -417,8 +417,8 @@ export default function FeedbackPage() {
                   </div>
                 ) : (
                   <div className="bg-zinc-950/40 border border-zinc-800/80 rounded-2xl p-5 text-center space-y-4">
-                    <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-                      Google Sign-In is required to verify your email address for communication and feedback records. We do not store passwords or Google credentials.
+                    <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 leading-relaxed max-w-sm mx-auto font-bold">
+                      ⚠️ Google Sign-In is required to verify your email address for communication and feedback records. We do not store passwords or Google credentials.
                     </p>
                     <div className="flex justify-center" id="google-signin-btn"></div>
                   </div>
