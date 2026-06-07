@@ -64,7 +64,7 @@ export default function FeedbackPage() {
     script.onload = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: "915588928767-narf0n9tltk7tibrgsjmosj1vgmtni1q.apps.googleusercontent.com",
+          client_id: "915588928767-4eo0tmb54oh7h85uu2but1u9fktfmiqq.apps.googleusercontent.com",
           callback: handleCredentialResponse
         });
         
