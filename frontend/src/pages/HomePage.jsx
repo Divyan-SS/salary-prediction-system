@@ -484,6 +484,26 @@ export default function HomePage() {
                 </p>
               </div>
             </motion.div>
+
+            {/* Workflow Step 3 */}
+            <motion.div 
+              initial={{ opacity: 0, x: window.innerWidth < 640 ? 0 : -30, y: window.innerWidth < 640 ? 20 : 0 }} whileInView={{ opacity: 1, x: 0, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="flex flex-col sm:flex-row items-stretch gap-4 sm:gap-6 relative pl-8 sm:pl-0"
+            >
+              <div className="sm:w-1/2 text-left sm:text-right sm:pr-8 flex flex-col justify-center">
+                <h4 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2" style={{ fontFamily: "var(--font-display)" }}>Google-Verified Feedback</h4>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                  Secure Google Account Sign-In verifies email identity to submit accuracy ratings. Feedback entries are immutable, helping audit model accuracy and dispatching automated updates.
+                </p>
+              </div>
+              <div className="absolute left-0 sm:left-1/2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-900 border-2 border-emerald-400 flex items-center justify-center text-[10px] sm:text-xs font-bold text-emerald-400 font-mono z-20 -translate-x-0 sm:-translate-x-1/2 top-1 sm:top-1/2 sm:-translate-y-1/2">3</div>
+              <div className="sm:w-1/2 bg-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-white/5 flex flex-col justify-center">
+                <span className="font-mono text-[10px] sm:text-xs text-emerald-400 block mb-1">INTEGRITY ROUTINE:</span>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Google Account Sign-In ➔ Verified Email Validation ➔ Immutable Submission Lock ➔ Automated Email Confirmation
+                </p>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -529,6 +549,11 @@ export default function HomePage() {
                     <td className="p-3 sm:p-4">Toggle sidebar data parameters across country lists.</td>
                     <td className="p-3 sm:p-4 text-[11px] sm:text-xs text-emerald-400">Reconstructs dynamic data matrices inside Recharts loops.</td>
                   </tr>
+                  <tr>
+                    <td className="p-3 sm:p-4 font-mono font-bold text-white">/feedback</td>
+                    <td className="p-3 sm:p-4">Verify email via Google Sign-In and submit prediction accuracy logs.</td>
+                    <td className="p-3 sm:p-4 text-[11px] sm:text-xs text-amber-400">Locks resubmission and triggers email confirmation logs.</td>
+                  </tr>
                 </tbody>
               </table>
             </motion.div>
@@ -565,10 +590,10 @@ npm run dev
         <section className="w-full max-w-[936px] mx-auto py-16 sm:py-24 px-4 text-center relative z-10 border-t border-white/5">
           <div className="relative flex flex-col justify-start items-start w-full max-w-2xl group mx-auto">
             <div className="absolute w-full h-full opacity-25 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%)', filter: 'blur(45px)' }} />
-            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden glass-panel">
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%) border-box' }}>
               <div className="w-full h-full p-6 sm:p-10 flex flex-col items-center justify-center backdrop-blur-md">
                 <h2 className="text-lg sm:text-2xl font-bold text-white mb-2 sm:mb-3" style={{ fontFamily: "var(--font-display)" }}>Ready to see your worth?</h2>
-                <p className="text-slate-300 mb-5 sm:mb-6 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">Launch a localized prediction metric or perform batch file mapping evaluation runs immediately.</p>
+                <p className="text-slate-300 mb-5 sm:mb-6 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">Launch a localized prediction metric, run batch processing maps, or submit prediction feedback.</p>
                 <div className="flex flex-col sm:flex-row justify-center gap-3 w-full sm:w-auto px-4 sm:px-0">
                   <Link to="/individual" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Individual Predictor</Link>
                   <Link to="/batch" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Batch Processor</Link>
