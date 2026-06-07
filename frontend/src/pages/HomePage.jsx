@@ -297,20 +297,20 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 sm:mt-16 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-4 md:gap-3 lg:gap-3 w-full max-w-[320px] sm:max-w-full mx-auto">
+          <div className="mt-10 sm:mt-16 md:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-[360px] sm:max-w-full mx-auto">
             <Link to="/individual" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group">
-                <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
-                <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
-                  <div className="w-full h-full p-5 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 items-center text-center backdrop-blur-md">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute w-full h-[140px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[20px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
+                <div className="self-stretch h-[140px] sm:h-[260px] md:h-[300px] rounded-[20px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[4px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
+                  <div className="w-full h-full p-3 sm:p-6 flex flex-col justify-center gap-2 sm:gap-4 items-center text-center backdrop-blur-md">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Individual</h3>
-                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Enter your profile – country, education, experience – and get a personalized salary forecast.</p>
+                      <h3 className="text-white font-medium text-xs sm:text-lg md:text-xl mb-0 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Individual</h3>
+                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1 hidden sm:block">Enter your profile – country, education, experience – and get a personalized salary forecast.</p>
                     </div>
                   </div>
                 </div>
@@ -319,18 +319,18 @@ export default function HomePage() {
 
             <Link to="/batch" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} className="relative flex flex-col justify-start items-start w-full group">
-                <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(35px)' }} />
-                <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
-                  <div className="w-full h-full p-5 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 items-center text-center backdrop-blur-md">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute w-full h-[140px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[20px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(35px)' }} />
+                <div className="self-stretch h-[140px] sm:h-[260px] md:h-[300px] rounded-[20px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[4px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
+                  <div className="w-full h-full p-3 sm:p-6 flex flex-col justify-center gap-2 sm:gap-4 items-center text-center backdrop-blur-md">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shrink-0">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7C5 4 4 5 4 7z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h8M12 8v8" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Batch</h3>
-                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Upload a CSV file and predict salaries for hundreds of rows at once. Fast and reliable.</p>
+                      <h3 className="text-white font-medium text-xs sm:text-lg md:text-xl mb-0 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Batch</h3>
+                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1 hidden sm:block">Upload a CSV file and predict salaries for hundreds of rows at once. Fast and reliable.</p>
                     </div>
                   </div>
                 </div>
@@ -339,17 +339,17 @@ export default function HomePage() {
 
             <Link to="/explore" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group">
-                <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(45px)' }} />
-                <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
-                  <div className="w-full h-full p-5 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 items-center text-center backdrop-blur-md">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute w-full h-[140px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[20px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(45px)' }} />
+                <div className="self-stretch h-[140px] sm:h-[260px] md:h-[300px] rounded-[20px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[4px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
+                  <div className="w-full h-full p-3 sm:p-6 flex flex-col justify-center gap-2 sm:gap-4 items-center text-center backdrop-blur-md">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Explore</h3>
-                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Dive into interactive charts, filter by country, education, experience – find insights.</p>
+                      <h3 className="text-white font-medium text-xs sm:text-lg md:text-xl mb-0 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Explore</h3>
+                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1 hidden sm:block">Dive into interactive charts, filter by country, education, experience – find insights.</p>
                     </div>
                   </div>
                 </div>
@@ -358,17 +358,17 @@ export default function HomePage() {
 
             <Link to="/feedback" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group">
-                <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%)', filter: 'blur(35px)' }} />
-                <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%) border-box' }}>
-                  <div className="w-full h-full p-5 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 items-center text-center backdrop-blur-md">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute w-full h-[140px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[20px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%)', filter: 'blur(35px)' }} />
+                <div className="self-stretch h-[140px] sm:h-[260px] md:h-[300px] rounded-[20px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[4px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%) border-box' }}>
+                  <div className="w-full h-full p-3 sm:p-6 flex flex-col justify-center gap-2 sm:gap-4 items-center text-center backdrop-blur-md">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shrink-0">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Feedback</h3>
-                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Submit prediction accuracy reviews and help monitor and refine the model quality.</p>
+                      <h3 className="text-white font-medium text-xs sm:text-lg md:text-xl mb-0 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Feedback</h3>
+                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1 hidden sm:block">Submit prediction accuracy reviews and help monitor and refine the model quality.</p>
                     </div>
                   </div>
                 </div>
