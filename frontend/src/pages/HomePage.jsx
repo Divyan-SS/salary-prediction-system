@@ -297,7 +297,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 sm:mt-16 md:mt-20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-4 md:gap-3 lg:gap-3 w-full max-w-[320px] sm:max-w-full mx-auto">
+          <div className="mt-10 sm:mt-16 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-4 md:gap-3 lg:gap-3 w-full max-w-[320px] sm:max-w-full mx-auto">
             <Link to="/individual" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group">
                 <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
@@ -337,7 +337,7 @@ export default function HomePage() {
               </motion.div>
             </Link>
 
-            <Link to="/explore" className="block w-full sm:col-span-2 md:col-span-1 max-w-full sm:max-w-[320px] md:max-w-[300px] mx-auto mt-0 sm:mt-2 md:mt-0">
+            <Link to="/explore" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group">
                 <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(45px)' }} />
                 <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
@@ -350,6 +350,25 @@ export default function HomePage() {
                     <div>
                       <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Explore</h3>
                       <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Dive into interactive charts, filter by country, education, experience – find insights.</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+
+            <Link to="/feedback" className="block w-full sm:max-w-none md:max-w-[300px] mx-auto">
+              <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group">
+                <div className="absolute w-full h-[240px] sm:h-[260px] md:h-[300px] opacity-35 rounded-[32px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%)', filter: 'blur(35px)' }} />
+                <div className="self-stretch h-[240px] sm:h-[260px] md:h-[300px] rounded-[32px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #8B5CF6 0%, #C084FC 45%, #F43F5E 100%) border-box' }}>
+                  <div className="w-full h-full p-5 sm:p-6 flex flex-col justify-center gap-3 sm:gap-4 items-center text-center backdrop-blur-md">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shrink-0">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium text-lg sm:text-xl mb-1.5 sm:mb-2 tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Feedback</h3>
+                      <p className="text-slate-300 text-xs sm:text-[13px] leading-[1.5] font-normal px-1">Submit prediction accuracy reviews and help monitor and refine the model quality.</p>
                     </div>
                   </div>
                 </div>
@@ -594,9 +613,11 @@ npm run dev
               <div className="w-full h-full p-6 sm:p-10 flex flex-col items-center justify-center backdrop-blur-md">
                 <h2 className="text-lg sm:text-2xl font-bold text-white mb-2 sm:mb-3" style={{ fontFamily: "var(--font-display)" }}>Ready to see your worth?</h2>
                 <p className="text-slate-300 mb-5 sm:mb-6 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">Launch a localized prediction metric, run batch processing maps, or submit prediction feedback.</p>
-                <div className="flex flex-col sm:flex-row justify-center gap-3 w-full sm:w-auto px-4 sm:px-0">
+                <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 w-full sm:w-auto px-4 sm:px-0">
                   <Link to="/individual" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Individual Predictor</Link>
                   <Link to="/batch" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Batch Processor</Link>
+                  <Link to="/explore" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Explore Data</Link>
+                  <Link to="/feedback" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition text-center block w-full sm:w-auto">Submit Feedback</Link>
                 </div>
               </div>
             </div>

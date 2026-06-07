@@ -361,11 +361,11 @@ export default function FeedbackPage() {
               {/* 1. Rate the Application / Result */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Rate the Application / Result</label>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => { setIsLiked(true); setError(""); }}
-                    className={`flex-1 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] ${
+                    className={`w-full sm:flex-1 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] ${
                       isLiked === true 
                         ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-500/5' 
                         : 'bg-zinc-950/40 border-zinc-800/80 text-slate-400 hover:bg-zinc-800/20'
@@ -376,7 +376,7 @@ export default function FeedbackPage() {
                   <button
                     type="button"
                     onClick={() => { setIsLiked(false); setError(""); }}
-                    className={`flex-1 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] ${
+                    className={`w-full sm:flex-1 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] ${
                       isLiked === false 
                         ? 'bg-red-500/20 border-red-500 text-red-400 shadow-lg shadow-red-500/5' 
                         : 'bg-zinc-950/40 border-zinc-800/80 text-slate-400 hover:bg-zinc-800/20'
@@ -463,16 +463,16 @@ export default function FeedbackPage() {
                 
                 {googleUser ? (
                   <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 text-left space-y-1.5 animate-fade-slide relative">
-                    <div className="flex justify-between items-start">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-0.5">
                         <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Identity Details</div>
-                        <div className="text-xs sm:text-sm text-slate-300 mt-1">Name: <span className="font-semibold text-white">{googleUser.name}</span></div>
-                        <div className="text-xs sm:text-sm text-slate-300">Email: <span className="font-semibold text-white">{googleUser.email}</span></div>
+                        <div className="text-xs sm:text-sm text-slate-300">Name: <span className="font-semibold text-white">{googleUser.name}</span></div>
+                        <div className="text-xs sm:text-sm text-slate-300 break-all sm:break-normal">Email: <span className="font-semibold text-white">{googleUser.email}</span></div>
                       </div>
                       <button
                         type="button"
                         onClick={handleEditEmail}
-                        className="text-[10px] sm:text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 transition text-sky-400 shrink-0 select-none"
+                        className="text-[10px] sm:text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 transition text-sky-400 self-start sm:self-center shrink-0 select-none"
                       >
                         Edit Email
                       </button>
