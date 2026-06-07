@@ -272,8 +272,6 @@ def send_user_thank_you_email(
         <p>We appreciate your time and support!</p>
         <br />
         <p>Best regards,<br /><strong>Project Team</strong></p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 11px; color: #999;">This is an automated message. Please do not reply directly to this email.</p>
     </body>
     </html>
     """
