@@ -283,10 +283,10 @@ export default function IndividualPredictPage() {
             </p>
           </div>
 
-          <div className="relative flex flex-col justify-start items-start w-full max-w-[340px] sm:max-w-full group mx-auto animate-float-delay-2">
-            <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%)', filter: 'blur(45px) sm:blur(50px)' }} />
+          <div className="relative flex flex-col justify-start items-start w-full max-w-2xl group mx-auto animate-float-delay-2">
+            <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%)', filter: 'blur(45px)' }} />
             
-            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden card-hover" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%) border-box' }}>
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #7DD3FC 50%, #4361EE 100%) border-box' }}>
               <div className="bg-zinc-900/40 px-5 py-4 sm:px-6 sm:py-5 border-b border-zinc-800/60 backdrop-blur-md">
                 <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2" style={{ fontFamily: "var(--font-display)" }}>
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

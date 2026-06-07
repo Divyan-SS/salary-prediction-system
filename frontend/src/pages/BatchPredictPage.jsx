@@ -372,8 +372,8 @@ export default function BatchPredictPage() {
             </p>
           </div>
 
-          <div className="relative flex flex-col w-full max-w-[340px] sm:max-w-full group mx-auto animate-float-delay-2">
-            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #7DD3FC 50%, #06B6D4 100%) border-box' }}>
+          <div className="relative flex flex-col w-full max-w-2xl group mx-auto animate-float-delay-2">
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #7DD3FC 50%, #06B6D4 100%) border-box' }}>
               <div className="p-4 sm:p-6 md:p-8 backdrop-blur-md">
                 <CsvUploader 
                   onFileSelect={handleFileChange}
@@ -392,7 +392,7 @@ export default function BatchPredictPage() {
           )}
 
           {batchData && (
-            <div className="space-y-6 mt-6 sm:mt-8 animate-float w-full max-w-[340px] sm:max-w-full mx-auto">
+            <div className="space-y-6 mt-6 sm:mt-8 animate-float w-full mx-auto">
               <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full border border-white/10 text-white">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
                   <div>

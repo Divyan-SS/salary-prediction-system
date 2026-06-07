@@ -97,9 +97,9 @@ export default function ResultCard({ prediction }) {
       <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6 animate-fade-slide text-white result-container w-full max-w-full">
         {/* Original Salary: Neon Pink/Blue Glow Card */}
         <div className="relative flex flex-col justify-start items-start w-full group mx-auto">
-          <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #4361EE 100%)', filter: 'blur(40px) sm:blur(50px)' }} />
+          <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #4361EE 100%)', filter: 'blur(40px)' }} />
           
-          <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #4361EE 100%) border-box' }}>
+          <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #4361EE 100%) border-box' }}>
             <div className="w-full h-full p-5 sm:p-8 bg-[#1A1A1C]/90 backdrop-blur-md relative">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 text-pink-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +160,7 @@ export default function ResultCard({ prediction }) {
           <div className="relative flex flex-col justify-start items-start w-full group mx-auto animate-fade-slide">
             <div className="absolute w-full h-full opacity-35 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #10b981 0%, #06B6D4 100%)', filter: 'blur(35px)' }} />
             
-            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #06B6D4 100%) border-box' }}>
+            <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #06B6D4 100%) border-box' }}>
               <div className="w-full h-full p-5 sm:p-8 bg-[#1A1A1C]/90 relative">
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

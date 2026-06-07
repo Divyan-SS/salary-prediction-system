@@ -808,7 +808,7 @@ export default function ExplorePage() {
             </p>
           </div>
 
-          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[300px_1fr] items-start w-full max-w-[340px] sm:max-w-full mx-auto">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[300px_1fr] items-start w-full mx-auto">
             {/* Desktop Left-Sidebar Panel Layer View (Hidden on mobile) */}
             <aside className="hidden xl:block w-full sticky top-24">
               <div className="glass-panel rounded-3xl p-5 shadow-sm card-hover">
@@ -847,7 +847,7 @@ export default function ExplorePage() {
               <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%)', filter: 'blur(35px)' }} />
-                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FF3D77 0%, #FFB1CE 45%, #FF9D3C 100%) border-box' }}>
                     <div className="w-full p-4.5 sm:p-6 flex flex-col items-center justify-center text-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
                       <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate w-full">Average Salary</p>
                       <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white w-full">{formatCurrency(avgSalary)}</p>
@@ -857,7 +857,7 @@ export default function ExplorePage() {
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%)', filter: 'blur(35px)' }} />
-                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #FFFFFF 0%, #7DD3FC 45%, #06B6D4 100%) border-box' }}>
                     <div className="w-full p-4.5 sm:p-6 flex flex-col items-center justify-center text-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
                       <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate w-full">Highest Salary</p>
                       <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white w-full">{formatCurrency(highestSalary)}</p>
@@ -867,7 +867,7 @@ export default function ExplorePage() {
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%)', filter: 'blur(35px)' }} />
-                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #4361EE 0%, #E0AEFF 45%, #F72585 100%) border-box' }}>
                     <div className="w-full p-4.5 sm:p-6 flex flex-col items-center justify-center text-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
                       <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate w-full">Lowest Salary</p>
                       <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white w-full">{formatCurrency(lowestSalary)}</p>
@@ -877,7 +877,7 @@ export default function ExplorePage() {
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                   <div className="absolute w-full h-full opacity-25 rounded-[24px] sm:rounded-[40px] pointer-events-none" style={{ background: 'linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%)', filter: 'blur(35px)' }} />
-                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient" style={{ border: '5px solid transparent', sm: '8px solid transparent', background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%) border-box' }}>
+                  <div className="self-stretch rounded-[24px] sm:rounded-[40px] z-10 overflow-hidden card-hover border-box-gradient border-[5px] sm:border-[8px] border-transparent border-solid" style={{ background: 'linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, linear-gradient(137deg, #10b981 0%, #a7f3d0 45%, #059669 100%) border-box' }}>
                     <div className="w-full p-4.5 sm:p-6 flex flex-col items-center justify-center text-center backdrop-blur-md min-h-[90px] sm:min-h-[110px]">
                       <p className="text-[11px] sm:text-sm font-semibold text-slate-300 uppercase tracking-wider truncate w-full">Total Records</p>
                       <p className="text-2xl sm:text-3xl font-extrabold mt-1 sm:mt-2 tracking-tight text-white w-full">{formatNumber(totalRecords)}</p>
@@ -928,7 +928,7 @@ export default function ExplorePage() {
                     return (
                       <div key={section.id} className="relative flex flex-col justify-start items-start w-full group mx-auto">
                         <div className="absolute w-full h-full opacity-25 rounded-[28px] sm:rounded-[40px] pointer-events-none" style={{ background: activeGlow, filter: 'blur(45px)' }} />
-                        <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden w-full card-hover" style={{ border: '6px solid transparent', sm: '8px solid transparent', background: `linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, ${activeGlow} border-box` }}>
+                        <div className="self-stretch rounded-[28px] sm:rounded-[40px] z-10 overflow-hidden w-full card-hover border-[6px] sm:border-[8px] border-transparent border-solid" style={{ background: `linear-gradient(rgba(11,18,36,0.5), rgba(11,18,36,0.5)) padding-box, ${activeGlow} border-box` }}>
                           <div className="w-full h-full p-4 sm:p-5 flex flex-col justify-between backdrop-blur-md">
                             {renderChartHeader(section.label, `Insights for ${section.label}`, section.id)}
                             <div className="h-[325px] w-full mt-3 sm:mt-4 relative overflow-hidden">
