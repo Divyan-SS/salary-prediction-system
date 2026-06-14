@@ -7,9 +7,17 @@ import pandas as pd
 # 📦 MODEL PATH (RENDER SAFE)
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
-_MODEL_PATH = BASE_DIR / "models" / "saved_steps.pkl"
+_MODEL_PATH = BASE_DIR / "models" / "saved_best_model.pkl"
 
 _model_data = None
+
+# Clean human-readable values for external display and API schemas
+CLEAN_CATEGORIES = {
+    "bachelor": "Bachelor's degree",
+    "master": "Master's degree",
+    "post_grad": "Postgrad / Doctoral",
+    "less_than_bachelor": "Less than a Bachelor's"
+}
 
 # =========================================================
 # ⚡ LOAD MODEL ONCE
@@ -26,64 +34,62 @@ def load_model_data():
 # 🤖 GETTERS (REQUIRED FOR ARCHITECTURAL STABILITY)
 # =========================================================
 def get_model():
-    return load_model_data()
+    return load_model_data()["model"]
 
 def get_country_encoder():
-    # Deprecated: returns None as pipeline manages OHE directly
-    return None
+    return load_model_data()["le_country"]
 
 def get_education_encoder():
-    # Deprecated: returns None as pipeline manages OHE directly
-    return None
+    return load_model_data()["le_education"]
 
 # =========================================================
 # 🔥 SMART EDUCATION NORMALIZATION
 # =========================================================
 def clean_education(edu_str):
     if not isinstance(edu_str, str):
-        return None
+        return CLEAN_CATEGORIES["less_than_bachelor"]
     
-    # Normalize broken encoding and characters
-    text = edu_str.encode('ascii', 'ignore').decode('utf-8') if 'â' in edu_str else edu_str
-    text = text.replace('’', "'").replace('â€™', "'").lower().strip()
+    text = edu_str.lower().strip()
     
-    # Keyword Patterns
-    undergrad_patterns = [r'bachelor', r'b\.sc', r'bsc', r'b\.e', r'be', r'b\.tech', r'btech', r'undergraduate']
-    postgrad_patterns = [r'master', r'm\.sc', r'msc', r'm\.e', r'me', r'm\.tech', r'mtech', 
-                         r'mba', r'phd', r'doctoral', r'doctorate', r'professional degree', r'postgraduate']
-    
-    for pattern in undergrad_patterns:
-        if re.search(pattern, text):
-            return "Undergraduate"
-            
-    for pattern in postgrad_patterns:
-        if re.search(pattern, text):
-            return "Postgraduate"
-            
-    return None
+    # Map to the 4 clean categories
+    if 'bachelor' in text or 'undergrad' in text:
+        return CLEAN_CATEGORIES["bachelor"]
+    elif 'master' in text:
+        return CLEAN_CATEGORIES["master"]
+    elif 'doctoral' in text or 'phd' in text or 'professional degree' in text or 'doctorate' in text or 'postgrad' in text or 'post grad' in text:
+        return CLEAN_CATEGORIES["post_grad"]
+    else:
+        return CLEAN_CATEGORIES["less_than_bachelor"]
 
 # =========================================================
 # ⚡ PREPROCESS INPUT
 # =========================================================
 def preprocess_input(country: str, education: str, experience):
-    pipeline = load_model_data()
+    model_data = load_model_data()
+    le_country = model_data["le_country"]
+    le_education = model_data["le_education"]
     
     # Clean and validate inputs
     country_cleaned = country.strip()
     norm_education = clean_education(education)
     
-    if norm_education not in ["Undergraduate", "Postgraduate"]:
-        raise ValueError(f"Invalid education level: {education}")
+    # Map the clean categories to the exact internal classes (handling encoding mismatch)
+    classes = le_education.classes_
+    bachelor_class = [c for c in classes if 'Bachelor' in c and 'Less' not in c][0]
+    master_class = [c for c in classes if 'Master' in c][0]
+    post_grad_class = [c for c in classes if 'Post' in c or 'grad' in c][0]
+    less_class = [c for c in classes if 'Less' in c][0]
+    
+    internal_map = {
+        CLEAN_CATEGORIES["bachelor"]: bachelor_class,
+        CLEAN_CATEGORIES["master"]: master_class,
+        CLEAN_CATEGORIES["post_grad"]: post_grad_class,
+        CLEAN_CATEGORIES["less_than_bachelor"]: less_class
+    }
+    
+    mapped_education = internal_map.get(norm_education, less_class)
 
-    # Inspect supported categories from the pipeline preprocessor
-    try:
-        preprocessor = pipeline.named_steps["preprocessor"]
-        ohe = preprocessor.named_transformers_["cat"]
-        supported_countries = ohe.categories_[0]
-    except Exception as e:
-        raise ValueError(f"Model preprocessing metadata unavailable: {str(e)}")
-
-    if country_cleaned not in supported_countries:
+    if country_cleaned not in le_country.classes_:
         raise ValueError(f"Unsupported country: {country_cleaned}")
 
     try:
@@ -94,9 +100,13 @@ def preprocess_input(country: str, education: str, experience):
     if experience < 0 or experience > 50:
         raise ValueError("Experience must be 0–50")
 
-    # Return DataFrame with proper column headers for ColumnTransformer
+    # Encode using LabelEncoders
+    country_encoded = le_country.transform([country_cleaned])[0]
+    education_encoded = le_education.transform([mapped_education])[0]
+
+    # Return DataFrame with proper column headers for RandomForestRegressor
     return pd.DataFrame(
-        [[country_cleaned, norm_education, experience]], 
+        [[country_encoded, education_encoded, experience]], 
         columns=["Country", "EdLevel", "YearsCodePro"]
     )
 

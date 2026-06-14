@@ -12,7 +12,7 @@ const countries = [
 
 export default function PredictionForm() {
   const [country, setCountry] = useState('United States');
-  const [uiEducation, setUiEducation] = useState('Postgraduate');
+  const [uiEducation, setUiEducation] = useState("Bachelor's degree");
   const [experience, setExperience] = useState(5);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -96,12 +96,17 @@ export default function PredictionForm() {
           <div className="animate-fade-slide" style={{ animationDelay: "0.05s" }}>
             <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2.5 sm:mb-3">Education Level</label>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {['Undergraduate', 'Postgraduate'].map((level) => (
+              {[
+                "Bachelor's degree",
+                "Master's degree",
+                "Postgrad / Doctoral",
+                "Less than a Bachelor's"
+              ].map((level) => (
                 <button
                   key={level}
                   type="button"
                   onClick={() => setUiEducation(level)}
-                  className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all border ${
+                  className={`py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all border ${
                     uiEducation === level 
                       ? 'bg-sky-500/20 border-sky-500 text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.2)]' 
                       : 'bg-zinc-900/40 border-zinc-800 text-gray-400 hover:bg-zinc-800/50'

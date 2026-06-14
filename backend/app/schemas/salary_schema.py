@@ -19,9 +19,14 @@ class PredictionRequest(BaseModel):
 
     @validator('education')
     def validate_education(cls, v):
-        allowed_values = ['Undergraduate', 'Postgraduate']
+        allowed_values = [
+            "Bachelor's degree",
+            "Master's degree",
+            "Postgrad / Doctoral",
+            "Less than a Bachelor's"
+        ]
         if v not in allowed_values:
-            raise ValueError('Education must be "Undergraduate" or "Postgraduate"')
+            raise ValueError('Education must be one of: "Bachelor\'s degree", "Master\'s degree", "Postgrad / Doctoral", "Less than a Bachelor\'s"')
         return v
 
 class PredictionResponse(BaseModel):
